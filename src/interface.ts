@@ -1,4 +1,4 @@
-import {ChatCompletionRequestMessage} from "openai";
+import { ChatCompletionRequestMessage } from "openai";
 
 export interface IConfig {
   api?: string;
@@ -12,6 +12,14 @@ export interface IConfig {
   chatPrivateTriggerKeyword: string;
 }
 export interface User {
-  username: string,
-  chatMessage: Array<ChatCompletionRequestMessage>,
+  username: string;
+  chatMessage: Array<ChatCompletionRequestMessage>;
+}
+
+export interface Task {
+  taskName: string;
+  cronTime: string | Date;
+  timeZone?: string;
+  targetType: "contact" | "room";
+  targetName: string;
 }

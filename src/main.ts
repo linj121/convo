@@ -1,7 +1,8 @@
 import { WechatyBuilder } from "wechaty";
 import QRCode from "qrcode";
 import { ChatGPTBot } from "./bot.js";
-import { config } from "./config.js";
+import { Scheduler } from "./scheduler/index.js";
+import { config, task } from "./config.js";
 const chatGPTBot = new ChatGPTBot();
 
 const bot = WechatyBuilder.build({
@@ -17,23 +18,17 @@ async function main() {
     .on("scan", async (qrcode, status) => {
       const url = `https://wechaty.js.org/qrcode/${encodeURIComponent(qrcode)}`;
       console.log(`Scan QR Code to login: ${status}\n${url}`);
-      console.log(
-        await QRCode.toString(qrcode, { type: "terminal", small: true })
-      );
+      console.log(await QRCode.toString(qrcode, { type: "terminal", small: true }));
     })
     .on("login", async (user) => {
       chatGPTBot.setBotName(user.name());
+      const scheduler = new Scheduler(bot, task);
+      scheduler.start();
       console.log(`User ${user} logged in`);
-      console.log(
-        `群聊触发关键词: @${chatGPTBot.botName} + ${config.chatTriggerRule}`
-      );
+      console.log(`群聊触发关键词: @${chatGPTBot.botName} ${config.chatTriggerRule}`);
       console.log(`私聊触发关键词: ${config.chatPrivateTriggerKeyword}`);
-      console.log(
-        `已设置 ${config.blockWords.length} 个聊天关键词屏蔽. ${config.blockWords}`
-      );
-      console.log(
-        `已设置 ${config.chatgptBlockWords.length} 个ChatGPT回复关键词屏蔽. ${config.chatgptBlockWords}`
-      );
+      console.log(`已设置 ${config.blockWords.length} 个聊天关键词屏蔽. ${config.blockWords}`);
+      console.log(`已设置 ${config.chatgptBlockWords.length} 个ChatGPT回复关键词屏蔽. ${config.chatgptBlockWords}`);
     })
     .on("message", async (message) => {
       if (message.date().getTime() < initializedAt) {
@@ -52,9 +47,7 @@ async function main() {
   try {
     await bot.start();
   } catch (e) {
-    console.error(
-      `⚠️ Bot start failed, can you log in through wechat on the web?: ${e}`
-    );
+    console.error(`⚠️ Bot start failed, can you log in through wechat on the web?: ${e}`);
   }
 }
 main();

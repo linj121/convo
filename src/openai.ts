@@ -2,11 +2,11 @@ import {
   Configuration,
   CreateImageRequestResponseFormatEnum,
   CreateImageRequestSizeEnum,
-  OpenAIApi
+  OpenAIApi,
 } from "openai";
 import fs from "fs";
 import DBUtils from "./data.js";
-import {config} from "./config.js";
+import { config } from "./config.js";
 
 const configuration = new Configuration({
   apiKey: config.openai_api_key,
@@ -19,7 +19,7 @@ const openai = new OpenAIApi(configuration);
  * @param username
  * @param message
  */
-async function chatgpt(username:string,message: string): Promise<string> {
+async function chatgpt(username: string, message: string): Promise<string> {
   // 先将用户输入的消息添加到数据库中
   DBUtils.addUserMessage(username, message);
   const messages = DBUtils.getChatMessage(username);
@@ -31,12 +31,17 @@ async function chatgpt(username:string,message: string): Promise<string> {
   let assistantMessage = "";
   try {
     if (response.status === 200) {
-      assistantMessage = response.data.choices[0].message?.content.replace(/^\n+|\n+$/g, "") as string;
-    }else{
-      console.log(`Something went wrong,Code: ${response.status}, ${response.statusText}`)
+      assistantMessage = response.data.choices[0].message?.content?.replace(
+        /^\n+|\n+$/g,
+        ""
+      ) as string;
+    } else {
+      console.log(
+        `Something went wrong,Code: ${response.status}, ${response.statusText}`
+      );
     }
-  }catch (e:any) {
-    if (e.request){
+  } catch (e: any) {
+    if (e.request) {
       console.log("请求出错");
     }
   }
@@ -48,18 +53,21 @@ async function chatgpt(username:string,message: string): Promise<string> {
  * @param username
  * @param prompt
  */
-async function dalle(username:string,prompt: string) {
-  const response = await openai.createImage({
-    prompt: prompt,
-    n:1,
-    size: CreateImageRequestSizeEnum._256x256,
-    response_format: CreateImageRequestResponseFormatEnum.Url,
-    user: username
-  }).then((res) => res.data).catch((err) => console.log(err));
+async function dalle(username: string, prompt: string) {
+  const response = await openai
+    .createImage({
+      prompt: prompt,
+      n: 1,
+      size: CreateImageRequestSizeEnum._256x256,
+      response_format: CreateImageRequestResponseFormatEnum.Url,
+      user: username,
+    })
+    .then((res) => res.data)
+    .catch((err) => console.log(err));
   if (response) {
     return response.data[0].url;
-  }else{
-    return "Generate image failed"
+  } else {
+    return "Generate image failed";
   }
 }
 
@@ -68,15 +76,17 @@ async function dalle(username:string,prompt: string) {
  * @param username
  * @param videoPath
  */
-async function whisper(username:string,videoPath: string): Promise<string> {
-  const file:any= fs.createReadStream(videoPath);
-  const response = await openai.createTranscription(file,"whisper-1")
-    .then((res) => res.data).catch((err) => console.log(err));
+async function whisper(username: string, videoPath: string): Promise<string> {
+  const file: any = fs.createReadStream(videoPath);
+  const response = await openai
+    .createTranscription(file, "whisper-1")
+    .then((res) => res.data)
+    .catch((err) => console.log(err));
   if (response) {
     return response.text;
-  }else{
-    return "Speech to text failed"
+  } else {
+    return "Speech to text failed";
   }
 }
 
-export {chatgpt,dalle,whisper};
+export { chatgpt, dalle, whisper };

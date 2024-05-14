@@ -12,6 +12,17 @@ const bot = WechatyBuilder.build({
     uos: true,
   },
 });
+
+/* temporary global status **/
+type GlobalStatus = {
+  login: boolean,
+  latestMessage: string
+}
+const globalStatus: GlobalStatus = {
+  login: false,
+  latestMessage: ""
+};
+
 async function main() {
   const initializedAt = Date.now();
   bot
@@ -21,6 +32,8 @@ async function main() {
       console.log(await QRCode.toString(qrcode, { type: "terminal", small: true }));
     })
     .on("login", async (user) => {
+      /* set global status **/
+      globalStatus.login = true;
       chatGPTBot.setBotName(user.name());
       const scheduler = new Scheduler(bot, task);
       scheduler.start();
@@ -39,6 +52,8 @@ async function main() {
         return;
       }
       try {
+        /* set global status **/
+        globalStatus.latestMessage = message.text();
         await chatGPTBot.onMessage(message);
       } catch (e) {
         console.error(e);
@@ -50,4 +65,27 @@ async function main() {
     console.error(`⚠️ Bot start failed, can you log in through wechat on the web?: ${e}`);
   }
 }
+
 main();
+
+/* test express server **/
+import express, { Express, Request, Response } from "express";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const app: Express = express();
+const port: string = process.env.PORT || "3000";
+
+app.get("/", (req: Request, res: Response) => {
+  res.send("Express + TypeScript Server");
+});
+
+app.get("/status", (req: Request, res: Response) => {
+  res.json(globalStatus);
+});
+
+
+app.listen(port, () => {
+  console.log(`[server]: Server is running at http://localhost:${port}`);
+});

@@ -29,13 +29,13 @@ export const task: Task[] = [
   //   targetType: "contact",
   //   targetName: "旅钟",
   // },
-  {
-    taskName: "shanghao",
-    cronTime: "0 * * * *",
-    timeZone: "Asia/Shanghai",
-    targetType: "room",
-    targetName: "今天玩啥 哇酷哇酷！",
-  },
+  // {
+  //   taskName: "shanghao",
+  //   cronTime: "0 * * * *",
+  //   timeZone: "Asia/Shanghai",
+  //   targetType: "room",
+  //   targetName: "今天玩啥 哇酷哇酷！",
+  // },
   // {
   //   taskName: "greeting",
   //   cronTime: "*/10 * * * * *",

@@ -165,11 +165,13 @@ export class ChatGPTBot {
       return;
     }
     let message = mesasge;
+    console.log(`[DEBUG] Got raw message: ${message}`);
     while (message.length > SINGLE_MESSAGE_MAX_SIZE) {
       messages.push(message.slice(0, SINGLE_MESSAGE_MAX_SIZE));
       message = message.slice(SINGLE_MESSAGE_MAX_SIZE);
     }
     messages.push(message);
+    console.log(`[DEBUG] Current messages array: ${JSON.stringify(messages)}`);
     for (const msg of messages) {
       await talker.say(msg);
     }

@@ -10,6 +10,8 @@ export interface IConfig {
   blockWords: string[];
   chatgptBlockWords: string[];
   chatPrivateTriggerKeyword: string;
+  port: string;
+  blockSelf: boolean,
 }
 export interface User {
   username: string;

@@ -72,6 +72,19 @@ export class Scheduler {
           break;
         case "joke":
           break;
+        case "countdown":
+          const numberOfCountDown = 5;
+          const messagesArray = Array.from({ length: numberOfCountDown })
+            .map((v, i) => i + 1)
+            .reverse();
+          let counter = 0;
+          console.log(`[DEBUG] ${name} | Send message NO.${counter++}: 时间差不多咯!`);
+          await target.say(`时间差不多咯!`);
+          for (const msg of messagesArray) {
+            console.log(`[DEBUG] ${name} | Send message NO.${counter++}: ${msg}!`);
+            await target.say(`${msg}!`);
+          }
+          break;
         default:
           console.error(`Task named ${taskName} was not found`);
       }
@@ -81,7 +94,10 @@ export class Scheduler {
   }
 
   start() {
-    this.taskPool.forEach((task) => task.start());
+    this.taskPool.forEach((task) => {
+      task.start();
+      console.log(`[DEBUG] Next task will be triggered at: ${task.nextDate()}`);
+    });
   }
 
   stop() {

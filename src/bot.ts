@@ -1,10 +1,5 @@
 import { config } from "./config.js";
-import {
-  ContactImpl,
-  ContactInterface,
-  RoomImpl,
-  RoomInterface,
-} from "wechaty/impls";
+import { ContactImpl, ContactInterface, RoomImpl, RoomInterface } from "wechaty/impls";
 import { Message } from "wechaty";
 import { FileBox } from "file-box";
 import { chatgpt, dalle, whisper } from "./openai.js";
@@ -38,9 +33,7 @@ interface ICommand {
 }
 export class ChatGPTBot {
   chatPrivateTriggerKeyword = config.chatPrivateTriggerKeyword;
-  chatTriggerRule = config.chatTriggerRule
-    ? new RegExp(config.chatTriggerRule)
-    : undefined;
+  chatTriggerRule = config.chatTriggerRule ? new RegExp(config.chatTriggerRule) : undefined;
   disableGroupMessage = config.disableGroupMessage || false;
   botName: string = "";
   ready = false;
@@ -113,9 +106,7 @@ export class ChatGPTBot {
    */
   async command(contact: any, rawText: string): Promise<void> {
     const [commandName, ...args] = rawText.split(/\s+/);
-    const command = this.commands.find(
-      (command) => command.name === commandName
-    );
+    const command = this.commands.find((command) => command.name === commandName);
     if (command) {
       await command.exec(contact, args.join(" "));
     }
@@ -155,26 +146,29 @@ export class ChatGPTBot {
     return config.chatgptBlockWords.some((word) => message.includes(word));
   }
   // The message is segmented according to its size
-  async trySay(
-    talker: RoomInterface | ContactInterface,
-    mesasge: string
-  ): Promise<void> {
+  async trySay(talker: ContactInterface | RoomInterface, mesasge: string): Promise<void> {
+    console.log(`[DEBUG] ${talker.id} | trySay starts ========================`);
     const messages: Array<string> = [];
     if (this.checkChatGPTBlockWords(mesasge)) {
       console.log(`🚫 Blocked ChatGPT: ${mesasge}`);
       return;
     }
     let message = mesasge;
-    console.log(`[DEBUG] Got raw message: ${message}`);
+    // console.log(`[DEBUG] ${talker.id} | Got raw message: ${message}`);
     while (message.length > SINGLE_MESSAGE_MAX_SIZE) {
       messages.push(message.slice(0, SINGLE_MESSAGE_MAX_SIZE));
+      // console.log(`[DEBUG] ${talker.id} | Building up messages array: ${JSON.stringify(messages)}`);
       message = message.slice(SINGLE_MESSAGE_MAX_SIZE);
     }
     messages.push(message);
-    console.log(`[DEBUG] Current messages array: ${JSON.stringify(messages)}`);
+    console.log(`[DEBUG] ${talker.id} | Finished messages array: ${JSON.stringify(messages)}`);
+    let counter = 0;
     for (const msg of messages) {
+      console.log(`[DEBUG] ${talker.id} | Send message NO.${counter}: ${msg}`);
+      counter++;
       await talker.say(msg);
     }
+    console.log(`[DEBUG] ${talker.id} | trySay ends ============================`);
   }
   // Check whether the ChatGPT processing can be triggered
   triggerGPTMessage(text: string, privateChat: boolean = false): boolean {
@@ -187,9 +181,7 @@ export class ChatGPTBot {
       triggered = this.chatGroupTriggerRegEx.test(text);
       // group message support `chatTriggerRule`
       if (triggered && chatTriggerRule) {
-        triggered = chatTriggerRule.test(
-          text.replace(this.chatGroupTriggerRegEx, "")
-        );
+        triggered = chatTriggerRule.test(text.replace(this.chatGroupTriggerRegEx, ""));
       }
     }
     if (triggered) {
@@ -205,15 +197,12 @@ export class ChatGPTBot {
     return config.blockWords.some((word) => message.includes(word));
   }
   // Filter out the message that does not need to be processed
-  isNonsense(
-    talker: ContactInterface,
-    messageType: MessageType,
-    text: string
-  ): boolean {
+  isNonsense(talker: ContactInterface, messageType: MessageType, text: string): boolean {
     return (
-      talker.self() ||
-      // TODO: add doc support
+      (config.blockSelf && talker.self()) ||
+      // Filter out msg send by yourself if `blockSelf` is set to True
       !(messageType == MessageType.Text || messageType == MessageType.Audio) ||
+      // 除了文本和语音消息，其他不处理
       talker.name() === "微信团队" ||
       // 语音(视频)消息
       text.includes("收到一条视频/语音聊天消息，请在手机上查看") ||
@@ -233,32 +222,33 @@ export class ChatGPTBot {
     await this.trySay(talker, gptMessage);
   }
 
-  async onGroupMessage(
-    talker: ContactInterface,
-    text: string,
-    room: RoomInterface
-  ) {
+  async onGroupMessage(talker: ContactInterface, text: string, room: RoomInterface) {
     const gptMessage = await this.getGPTMessage(await room.topic(), text);
     const result = `@${talker.name()} ${text}\n\n------\n ${gptMessage}`;
     await this.trySay(room, result);
   }
   async onMessage(message: Message) {
+    const listener = message.listener();
+    console.log(`[DEBUG] got listener: ${JSON.stringify(listener)}`);
     const talker = message.talker();
     const rawText = message.text();
     const room = message.room();
     const messageType = message.type();
     const privateChat = !room;
     if (privateChat) {
-      console.log(`🤵 Contact: ${talker.name()} 💬 Text: ${rawText}`);
+      console.log(`🤵 Contact: from ${talker.name()} to ${listener?.name()} 💬 Text: ${rawText}`);
     } else {
       const topic = await room.topic();
-      console.log(
-        `🚪 Room: ${topic} 🤵 Contact: ${talker.name()} 💬 Text: ${rawText}`
-      );
+      console.log(`🚪 Room: ${topic} 🤵 Contact: ${talker.name()} 💬 Text: ${rawText}`);
     }
     if (this.isNonsense(talker, messageType, rawText)) {
+      console.log(`[DEBUG] Current message ${rawText} of type ${messageType} from ${talker} is nonsense`);
       return;
     }
+
+    /** The target that we wish to send message to in PM */
+    const privateChatMsgTarget = listener && message.self() ? listener : talker;
+
     if (messageType == MessageType.Audio) {
       // 保存语音文件
       const fileBox = await message.toFileBox();
@@ -268,16 +258,19 @@ export class ChatGPTBot {
         return;
       });
       // Whisper
-      whisper("", fileName).then((text) => {
-        message.say(text);
-      });
+      const textFromAudio = await whisper("", fileName);
+      // .then((text) => {
+      //   message.say(text);
+      // });
+      const msgTarget = privateChat ? privateChatMsgTarget : message;
+      await msgTarget.say(textFromAudio);
       return;
     }
     if (rawText.startsWith("/cmd ")) {
       console.log(`🤖 Command: ${rawText}`);
       const cmdContent = rawText.slice(5); // 「/cmd 」一共5个字符(注意空格)
       if (privateChat) {
-        await this.command(talker, cmdContent);
+        await this.command(privateChatMsgTarget, cmdContent);
       } else {
         await this.command(room, cmdContent);
       }
@@ -290,7 +283,7 @@ export class ChatGPTBot {
       if (privateChat) {
         let url = (await dalle(talker.name(), imgContent)) as string;
         const fileBox = FileBox.fromUrl(url);
-        message.say(fileBox);
+        privateChatMsgTarget.say(fileBox);
       } else {
         let url = (await dalle(await room.topic(), imgContent)) as string;
         const fileBox = FileBox.fromUrl(url);
@@ -301,7 +294,7 @@ export class ChatGPTBot {
     if (this.triggerGPTMessage(rawText, privateChat)) {
       const text = this.cleanMessage(rawText, privateChat);
       if (privateChat) {
-        return await this.onPrivateMessage(talker, text);
+        return await this.onPrivateMessage(privateChatMsgTarget, text);
       } else {
         if (!this.disableGroupMessage) {
           return await this.onGroupMessage(talker, text, room);

@@ -42,6 +42,7 @@ async function main() {
       console.log(`私聊触发关键词: ${config.chatPrivateTriggerKeyword}`);
       console.log(`已设置 ${config.blockWords.length} 个聊天关键词屏蔽. ${config.blockWords}`);
       console.log(`已设置 ${config.chatgptBlockWords.length} 个ChatGPT回复关键词屏蔽. ${config.chatgptBlockWords}`);
+      console.log(`[DEBUG] Current settings: ${JSON.stringify(config)}`);
     })
     .on("message", async (message) => {
       if (message.date().getTime() < initializedAt) {
@@ -58,6 +59,9 @@ async function main() {
       } catch (e) {
         console.error(e);
       }
+    })
+    .on("error", (e) => {
+      console.error(`[ERROR] bot instance throws the following error: ${e}`);
     });
   try {
     await bot.start();
@@ -75,7 +79,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app: Express = express();
-const port: string = process.env.PORT || "3000";
+const port: string = config.port;
 
 app.get("/", (req: Request, res: Response) => {
   res.send("Express + TypeScript Server");

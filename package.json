@@ -1,8 +1,8 @@
 {
   "name": "convo",
-  "packageManager": "yarn@4.3.1",
   "version": "0.0.1",
   "main": "src/index.js",
+  "packageManager": "pnpm@9.5.0",
   "directories": {
     "doc": "docs",
     "test": "test"
@@ -19,25 +19,12 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/level-errors": "^3",
     "@types/qrcode": "^1.5.5",
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.10.10",
-    "brolog": "1.14.2",
-    "file-box": "1.4.15",
-    "gerror": "^1.0.16",
-    "level-errors": "^3.0.1",
-    "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "puppeteer-extra-plugin-user-data-dir": "^2.4.1",
-    "puppeteer-extra-plugin-user-preferences": "^2.4.1",
     "qrcode": "^1.5.3",
-    "redux": "^5.0.1",
-    "rxjs": "^7.8.1",
-    "typesafe-actions": "^5.1.0",
     "wechaty": "^1.20.2",
-    "wechaty-puppet": "1.20.2",
     "wechaty-puppet-wechat": "^1.18.4"
   }
 }

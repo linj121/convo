@@ -1,2 +1,0 @@
-# convo
-Instant messeges assistant

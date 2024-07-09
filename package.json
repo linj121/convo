@@ -11,20 +11,23 @@
     "build": "tsc --build --verbose --pretty",
     "build:debug": "tsc --build --verbose --pretty --sourceMap",
     "clean": "tsc --build --clean",
-    "serve": "node dist/index.js",
+    "serve": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/index.js",
     "watch": "tsx watch src/index.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "tsc --noEmit && tsx src/index.spec.ts"
   },
   "author": "Josh Lin",
   "license": "ISC",
   "description": "",
   "devDependencies": {
     "@types/qrcode": "^1.5.5",
+    "tsx": "^4.16.2",
     "typescript": "^5.5.3"
   },
   "dependencies": {
     "qrcode": "^1.5.3",
+    "tsconfig-paths": "^4.2.0",
     "wechaty": "^1.20.2",
-    "wechaty-puppet-wechat": "^1.18.4"
+    "wechaty-puppet-wechat": "^1.18.4",
+    "winston": "^3.13.0"
   }
 }

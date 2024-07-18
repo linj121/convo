@@ -1,4 +1,4 @@
-import WechatyApp from "@feature/bot";
+import WechatyApp from "services/bot";
 import logger from "@logger";
 
 async function main() {
@@ -13,7 +13,7 @@ async function main() {
   const app = wechatyApp.service;
 
   const gracefulShutdownHandler: NodeJS.SignalsListener = async (signal) => {
-    logger.info(`\nReceived ${signal.toString()}, gracefully shutting down`);
+    logger.info(`Received ${signal.toString()}, gracefully shutting down`);
     await app.stop();
     process.exit(0);
   }

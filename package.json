@@ -8,6 +8,7 @@
     "test": "test"
   },
   "scripts": {
+    "start": "npm run clean && npm run build && npm run serve",
     "build": "tsc --build --verbose --pretty",
     "build:debug": "tsc --build --verbose --pretty --sourceMap",
     "clean": "tsc --build --clean",

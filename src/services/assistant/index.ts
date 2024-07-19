@@ -2,17 +2,33 @@ import logger from "@logger";
 import { ScanStatus, Wechaty, WechatyBuilder, WechatyOptions } from "wechaty";
 import type { WechatyEventListeners } from "wechaty/dist/esm/src/schemas/wechaty-events";
 import QRCode from "qrcode";
+import MessageProcessor from "./messageProcessor";
 
-class WechatyApp {
+class AssistantService {
+  /**
+   * The wechaty puppet service we would like to use for everything 
+   */
   service: Wechaty;
   /**
    * For testing: `lastError` can be accessed and thrown in test cases.
-   * Added by onError event handler
+   * Added by onError handler
    */
   lastError: Error | null = null;
+  /**
+   * The timestamp in ms since midnight Jan 1, 1979 (UTC) 
+   * when wechaty service is constructed and being initialized
+   */
+  initializedAt: number;
+  /**
+   * message processor module used in onMessage handler
+   */
+  messageProcessor: MessageProcessor;
+
 
   constructor(options: WechatyOptions) {
+    this.initializedAt = Date.now();
     this.service = WechatyBuilder.build(options);
+    this.messageProcessor = new MessageProcessor(this);
     this.register();
   }
 
@@ -60,6 +76,11 @@ class WechatyApp {
 
   private onMessage: WechatyEventListeners["message"] = (message) => {
     logger.info(`on(message) ${message.toString()}`);
+    try {
+      this.messageProcessor.process(message);
+    } catch (error) {
+      logger.error(error);      
+    }
   };
 
   private onError: WechatyEventListeners["error"] = (error) => {
@@ -68,4 +89,4 @@ class WechatyApp {
   };
 }
 
-export default WechatyApp;
+export default AssistantService;

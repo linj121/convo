@@ -1,6 +1,6 @@
-import { describe, it, after } from "node:test";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import WechatyApp from "@feature/bot";
+import WechatyApp from ".";
 import { sleep } from "@utils/functions";
 
 describe("puppet service", () => {

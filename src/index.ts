@@ -1,8 +1,8 @@
-import WechatyApp from "@feature/bot";
+import AssistantService from "@services/assistant";
 import logger from "@logger";
 
 async function main() {
-  const wechatyApp = new WechatyApp({
+  const assistant = new AssistantService({
     name: "im-assistant",
     puppet: "wechaty-puppet-wechat",
     puppetOptions: {
@@ -10,10 +10,10 @@ async function main() {
     },
   });
 
-  const app = wechatyApp.service;
+  const app = assistant.service;
 
   const gracefulShutdownHandler: NodeJS.SignalsListener = async (signal) => {
-    logger.info(`\nReceived ${signal.toString()}, gracefully shutting down`);
+    logger.info(`Received ${signal.toString()}, gracefully shutting down`);
     await app.stop();
     process.exit(0);
   }

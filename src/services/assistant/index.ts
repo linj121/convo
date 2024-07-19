@@ -74,10 +74,10 @@ class AssistantService {
     logger.info(`on(logout) user:${user.toString()}, reason:${reason}`);
   };
 
-  private onMessage: WechatyEventListeners["message"] = (message) => {
+  private onMessage: WechatyEventListeners["message"] = async (message) => {
     logger.info(`on(message) ${message.toString()}`);
     try {
-      this.messageProcessor.process(message);
+      await this.messageProcessor.process(message);
     } catch (error) {
       logger.error(error);      
     }

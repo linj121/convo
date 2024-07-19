@@ -2,6 +2,7 @@ import { MessageInterface } from "wechaty/impls";
 import AssistantService from "./index";
 import DailyCheckinService from "@services/dailycheckin";
 import { CommandPayload, CheckinType } from "./types";
+import { deletePartofString } from "@utils/functions";
 import logger from "@logger";
 
 class MessageProcessor {
@@ -27,7 +28,11 @@ class MessageProcessor {
       (await message.room()!.topic()) === "罗伯特" && 
       message.type() === this.ctx.service.Message.Type.Text
     ) {
-      this.checkin(message);
+      try {
+        await this.checkin(message);
+      } catch (error) {
+        throw error;        
+      }
       return;
     }
 
@@ -125,8 +130,8 @@ class MessageProcessor {
       note: undefined
     };
 
-    logger.debug(`Initial payload${JSON.stringify(payload)}`);
-    logger.debug(`checkinParams: ${checkinParams}`);
+    logger.debug(`checkin(message) Initial payload${JSON.stringify(payload)}`);
+    logger.debug(`checkin(message) checkinParams: ${checkinParams}`);
 
     /**
      * Parse flags from checkinParams and assign corresponding values to payload
@@ -140,6 +145,7 @@ class MessageProcessor {
         "url": /-url<a[^>]*> +(?<url>(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*))<\/a>/,
         "note": /-note +(?<note>(?=\S).+\S|\S)/,
       };
+      const matchOrder : string[] = ["url", "note"]
       
       /**
        * If all params cannot match checkinParamsRegex, isParamsValid = false;
@@ -148,23 +154,26 @@ class MessageProcessor {
        */
       let isParamsValid: boolean = false;
       if (checkinParams) {
-        for (const prop in checkinParamsRegex) {
-          const match = checkinParams.match(checkinParamsRegex[prop]);
+        let tmpCheckinParams = checkinParams;
+        for (const flag of matchOrder) {
+          logger.debug(`checkin(message) tmpCheckinParams: ${tmpCheckinParams}`);
+          const match = tmpCheckinParams.match(checkinParamsRegex[flag]);
           if (!match) {
             continue;
           }
-          if (!match.groups || !match.groups[prop]) {
+          if (!match.groups || !match.groups[flag] || match.index === undefined) {
             throw new Error("fail to capture groups in checkin params");
           }
           isParamsValid = true;
-          (payload[prop as keyof CommandPayload] as string | undefined) = match.groups[prop];
+          tmpCheckinParams = deletePartofString(tmpCheckinParams, match.index!, match.index! + match[0].length);
+          (payload[flag as keyof CommandPayload] as string | undefined) = match.groups[flag];
         }
       }
       
-      logger.debug(`Payload after extraction: ${JSON.stringify(payload)}`);
+      logger.debug(`checkin(message) Payload after extraction: ${JSON.stringify(payload)}`);
 
       if (!isParamsValid) {
-        room!.say(wrongFormatInfo[language]);
+        await room!.say(wrongFormatInfo[language]);
         return;
       }
     }
@@ -176,13 +185,41 @@ class MessageProcessor {
     await DailyCheckinService.submit(payload);
     const userInsights = await DailyCheckinService.getUserInsights(talkerName, checkinType);
 
-    const sucessMessage = {
-      "en": `@${talkerName}, checkin for ${checkinTypeText} success，exp+1`,
-      "zh": `@${talkerName}，打卡${checkinTypeText}成功，经验+1`,
-    }
-    room!.say(sucessMessage[language]);
 
-    logger.debug(`Final payload: ${JSON.stringify(payload)}`);
+    const msgTimeLocaleString = {
+      "en": message.date().toLocaleString("en-GB", {
+        year: "numeric", 
+        month: "long", 
+        day: "numeric",
+        era: "long",
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+        timeZone: "America/New_York"
+      }),
+      "zh": message.date().toLocaleString("zh-CN-u-ca-chinese", {
+        calendar: "chinese",
+        year: "numeric", 
+        month: "long", 
+        day: "numeric",
+        era: "long",
+        hour: "numeric",
+        minute: "numeric",
+        timeZone: "Asia/Shanghai"
+      }),
+    }
+
+    const sucessMessage = {
+      "en": `@${talkerName}, checkin for ${checkinTypeText} success!\n`+
+            `checkin time: ${msgTimeLocaleString["en"]}\n`+
+            `exp+1`,
+      "zh": `@${talkerName}，打卡${checkinTypeText}成功!\n`+
+            `打卡时间：${msgTimeLocaleString["zh"]}\n`+
+            `经验+1`,
+    }
+    await room!.say(sucessMessage[language]);
+
+    logger.debug(`checkin(message) Final payload: ${JSON.stringify(payload)}`);
   }
 
 

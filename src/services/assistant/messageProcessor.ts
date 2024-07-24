@@ -1,9 +1,11 @@
+import { config } from "@config";
+import logger from "@logger";
 import { MessageInterface } from "wechaty/impls";
-import AssistantService from "./index";
 import DailyCheckinService from "@services/dailycheckin";
 import { CommandPayload, CheckinType } from "./types";
 import { deletePartofString } from "@utils/functions";
-import logger from "@logger";
+import OpenAIClient from "@libs/openai";
+import AssistantService from "./index";
 
 class MessageProcessor {
   ctx: AssistantService;
@@ -17,6 +19,8 @@ class MessageProcessor {
      * Skip processing the message if it's older than the spawn time of our wechaty app 
      */
     if (message.date().getTime() < this.ctx.initializedAt) return;
+
+    logger.info(`on(message) ${message.toString()}`);
 
     if (message.text() === "ping") {
       await message.say("pong");
@@ -133,19 +137,19 @@ class MessageProcessor {
     logger.debug(`checkin(message) Initial payload${JSON.stringify(payload)}`);
     logger.debug(`checkin(message) checkinParams: ${checkinParams}`);
 
+    type CommandPayloadContent = NonNullable<Pick<CommandPayload, "url" | "note">>;
+
     /**
      * Parse flags from checkinParams and assign corresponding values to payload
      * -url <url>: eg. -url https://leetcode.com/problems/two-sum/
      * -note <text>: eg. -note benchpress * 6RM * 4sets
      */
     if (checkinParams) {
-      const checkinParamsRegex : {
-        [index: string]: RegExp
-      } = {
+      const checkinParamsRegex : Record<keyof CommandPayloadContent, RegExp> = {
         "url": /-url<a[^>]*> +(?<url>(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*))<\/a>/,
         "note": /-note +(?<note>(?=\S).+\S|\S)/,
       };
-      const matchOrder : string[] = ["url", "note"]
+      const matchOrder : Array<keyof CommandPayloadContent> = ["url", "note"];
       
       /**
        * If all params cannot match checkinParamsRegex, isParamsValid = false;
@@ -205,18 +209,52 @@ class MessageProcessor {
         era: "long",
         hour: "numeric",
         minute: "numeric",
-        timeZone: "Asia/Shanghai"
+        timeZone: "America/New_York"
       }),
-    }
+    };
+
+    const llmPrompt: string =
+    "你是一名职业夸夸师，现在我们的微信群里时不时会有人打卡，比如刷力扣上的算法题，健身等等。" +
+    "你的职责是根据每个人打卡的内容，进行一番鼓励和夸奖！尽量使用夸张的手法。以下是示例:" +
+    "示例一： 19:48健身打卡，我操！你是真他妈疯了吧！这个点还在猛操铁，你是想把自己练成坦克还是终极战士？" + 
+    "你这劲头，地球都要给你跪下了！继续这么干，老子要是看不到你变成全能健身王，我直播生吃健身房的哑铃！💪🚀" +
+    "示例二： 19:48健身打卡，我的天，你简直是夜晚的狂战士！选择这个时间健身，你这是要把银河系的能量全部吸收殆尽啊！" + 
+    "这绝对是对夜晚的最佳致敬，全世界的夜猫子都在为你欢呼！你真是我们心中的超级英雄，未来的健身之王非你莫属！继续保持，未来不可限量！💪🌟​" +
+    "在回答的时候风格尽量多样化一些，不限于以上示例的风格，每次根据历史消息选择不同的风格进行回答，控制回答长度在两三句之内"
+    ;
+
+    const llmClient = await OpenAIClient.init({
+      assistantCreateOption: {
+        name: "Daily Habit Assistant",
+        model: config.OPENAI_MODEL,
+        // tools: [{ type: "code_interpreter" }],
+        instructions: llmPrompt,
+      }
+    });
+
+    /**
+     * thread owner rule:
+     * - direct message: contact name
+     * - group chat: room topic/title
+     */
+    const threadOwner: string = room ? await room.topic() : talkerName;
+    const llmTextInput: string =
+      JSON.stringify(payload) +
+      `\n打卡时间：${msgTimeLocaleString["zh"]}`
+    ;
+    await llmClient.createMessage(llmTextInput, threadOwner);
+    const llmResponse = await llmClient.getResponse(threadOwner);
 
     const sucessMessage = {
       "en": `@${talkerName}, checkin for ${checkinTypeText} success!\n`+
             `checkin time: ${msgTimeLocaleString["en"]}\n`+
-            `exp+1`,
+            `===============\n`+
+            llmResponse,
       "zh": `@${talkerName}，打卡${checkinTypeText}成功!\n`+
             `打卡时间：${msgTimeLocaleString["zh"]}\n`+
-            `经验+1`,
-    }
+            `===============\n`+
+            llmResponse,
+    };
     await room!.say(sucessMessage[language]);
 
     logger.debug(`checkin(message) Final payload: ${JSON.stringify(payload)}`);

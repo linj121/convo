@@ -75,7 +75,6 @@ class AssistantService {
   };
 
   private onMessage: WechatyEventListeners["message"] = async (message) => {
-    logger.info(`on(message) ${message.toString()}`);
     try {
       await this.messageProcessor.process(message);
     } catch (error) {

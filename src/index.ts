@@ -1,5 +1,7 @@
-import AssistantService from "@services/assistant";
+import "init";
 import logger from "@logger";
+import AssistantService from "@services/assistant";
+import { sleep } from "@utils/functions";
 
 async function main() {
   const assistant = new AssistantService({
@@ -15,6 +17,7 @@ async function main() {
   const gracefulShutdownHandler: NodeJS.SignalsListener = async (signal) => {
     logger.info(`Received ${signal.toString()}, gracefully shutting down`);
     await app.stop();
+    await sleep(3);
     process.exit(0);
   }
   process.on("SIGINT", gracefulShutdownHandler);

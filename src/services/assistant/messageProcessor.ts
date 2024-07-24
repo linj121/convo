@@ -94,12 +94,12 @@ class MessageProcessor {
     const talkerId = talker.id;
     const talkerAlias = await talker.alias();
 
-    const checkinRegex = {
-      "en": /^ *\/checkin +(?<checkinType>leetcode|workout|reading|cooking)( +(?<params>(?=\S).+\S|\S))? *$/,
-      "zh": /^ *\/打卡 +(?<checkinType>力扣|健身|阅读|做饭)( +(?<params>(?=\S).+\S|\S))? *$/
+    const checkinRegex: Record<"en"|"zh", RegExp> = {
+      "en": /^ *\/checkin +(?<checkinType>leetcode|workout|reading|cooking)( +(?<params>(?=\S)(.|\n)+\S|\S))? *$/m,
+      "zh": /^ *\/打卡 +(?<checkinType>力扣|健身|阅读|做饭)( +(?<params>(?=\S)(.|\n)+\S|\S))? *$/m
     };
 
-    const wrongFormatInfo = {
+    const wrongFormatInfo: Record<"en"|"zh", string> = {
       "en": `@${talkerName}, format incorrect, checkout the correct usage：\n` +
             "/checkin (leetcode|workout|reading|cooking) [-url 'url'] [-note 'text']\n" +
             "eg. /checkin workout, OR /checkin workout -note bench press * 10rm\n" +
@@ -110,7 +110,7 @@ class MessageProcessor {
             "再如，/打卡 力扣，或者 /打卡 力扣 -url https://leetcode.com/problems/lucky-numbers-in-a-matrix/",
     }
 
-    const testResult = checkinRegex[language].test(messageText);
+    const testResult: boolean = checkinRegex[language].test(messageText);
     if (!testResult) {
       room!.say(wrongFormatInfo[language]);
       return;   
@@ -120,9 +120,9 @@ class MessageProcessor {
     if (!checkinRegexMatch || !checkinRegexMatch.groups) {
       throw new Error("Provided text message cannot be matched");
     }
-    const checkinType = checkinTypeMap[checkinRegexMatch.groups.checkinType];
-    const checkinTypeText = checkinTranslations[language][checkinType];
-    const checkinParams = checkinRegexMatch.groups.params;
+    const checkinType: CheckinType = checkinTypeMap[checkinRegexMatch.groups.checkinType];
+    const checkinTypeText: string = checkinTranslations[language][checkinType];
+    const checkinParams: string = checkinRegexMatch.groups.params;
 
     const payload: CommandPayload = {
       messageTime: message.date().getTime(),
@@ -147,9 +147,10 @@ class MessageProcessor {
     if (checkinParams) {
       const checkinParamsRegex : Record<keyof CommandPayloadContent, RegExp> = {
         "url": /-url<a[^>]*> +(?<url>(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&\/\/=]*))<\/a>/,
-        "note": /-note +(?<note>(?=\S).+\S|\S)/,
+        "note": /-note(?: |\n)+(?<note>(?:(?!-url|-timezone|-count).|\n)+)/,
       };
-      const matchOrder : Array<keyof CommandPayloadContent> = ["url", "note"];
+
+      const matchOrder: Array<keyof CommandPayloadContent> = ["url", "note"];
       
       /**
        * If all params cannot match checkinParamsRegex, isParamsValid = false;
@@ -157,20 +158,53 @@ class MessageProcessor {
        * In other words, as long as one of the params is valid, set isParamsValid = true.
        */
       let isParamsValid: boolean = false;
+
       if (checkinParams) {
+
         let tmpCheckinParams = checkinParams;
+
         for (const flag of matchOrder) {
           logger.debug(`checkin(message) tmpCheckinParams: ${tmpCheckinParams}`);
+
+          if (flag === "note") {
+            tmpCheckinParams = tmpCheckinParams.replace(/<br\/>/gm , "\n");
+            logger.debug(`checkin(message) tmpCheckinParams after <br> replaced: ${tmpCheckinParams}`);
+          }
+
           const match = tmpCheckinParams.match(checkinParamsRegex[flag]);
+
           if (!match) {
             continue;
           }
+
           if (!match.groups || !match.groups[flag] || match.index === undefined) {
             throw new Error("fail to capture groups in checkin params");
           }
+
           isParamsValid = true;
-          tmpCheckinParams = deletePartofString(tmpCheckinParams, match.index!, match.index! + match[0].length);
-          (payload[flag as keyof CommandPayload] as string | undefined) = match.groups[flag];
+
+          tmpCheckinParams = deletePartofString(tmpCheckinParams,
+                                                match.index!, match.index! + match[0].length);
+                                            
+          let flagContent = match.groups[flag].trim();
+
+          if (flag === "note") {
+            logger.debug(`checkin(message) raw content for -note: ${flagContent}`);
+
+            // is flagContent not in a valid markdown format?
+
+            // parse Markdown and convert to JSON
+
+            // debug the JSON
+
+            // map to a specific json structure
+
+              // Deal with special cases when titles are omitted
+
+            // assign to flagContent
+          }
+
+          (payload[flag as keyof CommandPayload] as string | undefined) = flagContent;
         }
       }
       
@@ -195,7 +229,7 @@ class MessageProcessor {
         year: "numeric", 
         month: "long", 
         day: "numeric",
-        era: "long",
+        // era: "long",
         hour: "numeric",
         minute: "numeric",
         hour12: true,

@@ -2,20 +2,21 @@ import { config } from "@config";
 import logger from "@logger";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: config.OPENAI_API_KEY,
-  project: config.OPENAI_PROJECT_ID || undefined
-});
-
 class OpenAIClient {
-  assistant?: OpenAI.Beta.Assistants.Assistant;
+  public assistant?: OpenAI.Beta.Assistants.Assistant;
   /**
    * threads key: the owner of the thread in wechat, 
    * either contact or group chat topic
    */
-  threads?: Record<string, OpenAI.Beta.Threads.Thread>;
+  public threads?: Record<string, OpenAI.Beta.Threads.Thread>;
+  public static openai: OpenAI; 
 
-  private constructor() {}
+  private constructor() {
+    OpenAIClient.openai = new OpenAI({
+      apiKey: config.OPENAI_API_KEY,
+      project: config.OPENAI_PROJECT_ID || undefined
+    });
+  }
 
   static async init(
     { assistantCreateOption }: 
@@ -23,20 +24,20 @@ class OpenAIClient {
   ) {
     const client = new OpenAIClient();
 
-    client.assistant = await openai.beta.assistants.create(assistantCreateOption);
+    client.assistant = await OpenAIClient.openai.beta.assistants.create(assistantCreateOption);
 
     return client;
   }
 
   async createThread(threadOwner: string) {
     if (!this.threads) {
-      const thread = await openai.beta.threads.create();
+      const thread = await OpenAIClient.openai.beta.threads.create();
       this.threads = { [threadOwner]: thread };
       return;
     }
 
     if (!this.threads.hasOwnProperty(threadOwner)) {
-      const thread = await openai.beta.threads.create();
+      const thread = await OpenAIClient.openai.beta.threads.create();
       this.threads[threadOwner] = thread;
       return;
     }
@@ -57,7 +58,7 @@ class OpenAIClient {
 
     const thread = this.threads![threadOwner];
 
-    await openai.beta.threads.messages.create(thread.id, {
+    await OpenAIClient.openai.beta.threads.messages.create(thread.id, {
       role: "user",
       content: message,
     });
@@ -80,7 +81,7 @@ class OpenAIClient {
 
     const thread = this.threads![threadOwner];
 
-    let run = await openai.beta.threads.runs.createAndPoll(
+    let run = await OpenAIClient.openai.beta.threads.runs.createAndPoll(
       thread.id,
       { 
         assistant_id: this.assistant!.id,
@@ -92,7 +93,7 @@ class OpenAIClient {
       return;
     }
 
-    const messages = await openai.beta.threads.messages.list(
+    const messages = await OpenAIClient.openai.beta.threads.messages.list(
       run.thread_id
     );
 
@@ -124,7 +125,7 @@ class OpenAIClient {
 
     const thread = this.threads![threadOwner];
 
-    const run = openai.beta.threads.runs
+    const run = OpenAIClient.openai.beta.threads.runs
     .stream(thread.id, {
       assistant_id: this.assistant.id,
     })

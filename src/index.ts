@@ -1,9 +1,11 @@
-import "init";
-import logger from "@logger";
-import AssistantService from "@services/assistant";
+import init from "./init";
 import { sleep } from "@utils/functions";
 
 async function main() {
+  await init();
+  const { default: logger } = await import("@logger");
+  const { default: AssistantService } = await import("@services/assistant");
+  
   const assistant = new AssistantService({
     name: "im-assistant",
     puppet: "wechaty-puppet-wechat",

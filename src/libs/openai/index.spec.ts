@@ -1,5 +1,7 @@
-import { config } from "@config";
+import { config, parseConfig } from "@config";
 import OpenAIClient from "./index";
+
+parseConfig();
 
 const test1 = async () => {
   const llmClient = await OpenAIClient.init({

@@ -13,7 +13,7 @@ type Config = z.infer<typeof configSchema>;
 
 let config: Config;
 
-const parseConfig = (): Config => {
+function parseConfig(): Config {
   const parsedConfig = configSchema.safeParse({
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_MODEL: process.env.OPENAI_MODEL,

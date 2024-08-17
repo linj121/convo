@@ -5,7 +5,10 @@ import type { Statement } from "better-sqlite3";
 
 class LlmRepository {
   public static database: Database;
-  public static statements: Record<string, Record<string, Statement>>;
+  public static statements: Record<string, Record<string, Statement>> = {
+    "assistant": {},
+    "thread": {},
+  };
 
   public static migrations: string[] = [
     `CREATE TABLE IF NOT EXISTS assistant (
@@ -17,7 +20,7 @@ class LlmRepository {
 
     `CREATE TABLE IF NOT EXISTS thread (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-        owner TEXT NOT NULL,
+        owner TEXT NOT NULL UNIQUE,
         thread_id TEXT NOT NULL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
     );`,      
@@ -75,12 +78,13 @@ class LlmRepository {
   }
 
   /**
-   * Call this before using this class :(
+   * Call this before using this class
+   * The order of initialization matters
    */
   static initialize() {
+    this.init_database();
     this.create_tables(this.migrations);
     this.init_statements();
-    this.init_database();
   }
 
   static drop_tables(tables: string[]): void {

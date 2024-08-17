@@ -73,6 +73,10 @@ describe("LlmRepository Tests", function () {
     expect(LlmRepository.statements["thread"]).to.have.property("insertOne");
   });
 
+  it("should initialize the repository without throwing any errors", function () {
+    expect(() => LlmRepository.initialize()).to.not.throw();
+  });
+
   it("should insert data into the assistant table", function () {
     LlmRepository.init_statements();
     const result = LlmRepository.insertOne("assistant", {
@@ -192,4 +196,20 @@ describe("LlmRepository Tests", function () {
       "An error occured during updateOne on table nonexistent_table with condition test_condition and value test_value"
     );
   });
+
+  it("should return undefined when findOne does not find a matching row", function () {
+    LlmRepository.init_statements();
+
+    LlmRepository.insertOne("assistant", {
+      str_id: "habit_tracker",
+      actual_id: "a_real_assistant_id",
+    });
+
+    const result = LlmRepository.findOne("assistant", {
+      value: "not_a_real_assistant_id",
+    });
+
+    expect(result).to.be.undefined;
+  });
+
 });

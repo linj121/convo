@@ -1,6 +1,6 @@
 {
   "name": "convo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "src/index.js",
   "packageManager": "pnpm@9.5.0",
   "directories": {
@@ -14,17 +14,23 @@
     "clean": "tsc --build --clean",
     "serve": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/index.js",
     "watch": "tsx watch src/index.ts",
-    "test": "tsc --noEmit && tsx src/index.spec.ts"
+    "test": "mocha"
   },
   "author": "Josh Lin",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/chai": "^4.3.17",
+    "@types/mocha": "^10.0.7",
     "@types/qrcode": "^1.5.5",
+    "chai": "^5.1.1",
+    "mocha": "^10.7.3",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"
   },
   "dependencies": {
+    "better-sqlite3": "^11.1.2",
     "dotenv": "^16.4.5",
     "openai": "^4.53.0",
     "qrcode": "^1.5.3",

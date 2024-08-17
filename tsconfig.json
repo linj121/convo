@@ -35,6 +35,8 @@
       "@services/*": ["services/*"],
       "@config": ["config"],
       "@libs/*": ["libs/*"],
+      "@data/*": ["data/*"],
+      "@data": ["data/index"],
     },                                                /* Specify a set of entries that re-map imports to additional lookup locations. */
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like './node_modules/@types'. */
@@ -112,7 +114,6 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "src/**/*"
   ]
 }

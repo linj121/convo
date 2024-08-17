@@ -2,14 +2,21 @@ import { config } from "@config";
 import logger from "@logger";
 import OpenAI from "openai";
 
+type ThreadOwner = string;
+enum AssistantEnum {
+  DEFAULT = "default",
+  HABIT_TRACKER = "habit_tracker",
+}
+
 class OpenAIClient {
   public assistant?: OpenAI.Beta.Assistants.Assistant;
   /**
    * threads key: the owner of the thread in wechat, 
    * either contact or group chat topic
    */
-  public threads?: Record<string, OpenAI.Beta.Threads.Thread>;
+  public threads?: Record<ThreadOwner, OpenAI.Beta.Threads.Thread>;
   public static openai: OpenAI; 
+  public static assistants_pool?: Record<AssistantEnum, OpenAI.Beta.Assistants.Assistant["id"]>;
 
   private constructor() {
     OpenAIClient.openai = new OpenAI({
@@ -29,7 +36,7 @@ class OpenAIClient {
     return client;
   }
 
-  async createThread(threadOwner: string) {
+  async createThread(threadOwner: ThreadOwner) {
     if (!this.threads) {
       const thread = await OpenAIClient.openai.beta.threads.create();
       this.threads = { [threadOwner]: thread };
@@ -51,7 +58,7 @@ class OpenAIClient {
    * @param message Plain text message to be sent
    * @param threadOwner thread owner in wechat (contact or group chat topic)
    */
-  async createMessage(message: string, threadOwner: string) {
+  async createMessage(message: string, threadOwner: ThreadOwner) {
     if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
       await this.createThread(threadOwner);
     }
@@ -70,18 +77,18 @@ class OpenAIClient {
    * @param threadOwner thread owner in wechat (contact or group chat topic)
    * @returns aisstant response in plain text
    */
-  async getResponse(threadOwner: string): Promise<string|undefined> {
+  async getResponse(threadOwner: ThreadOwner): Promise<string|undefined> {
     if (!this.assistant) {
       throw new Error("Assistant has not been initialized. Create assistant before anything else");
     }
 
     if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
-      await this.createThread(threadOwner);
+      throw new Error("No corresponding thread has been found. Init a thread and create messages first.");
     }
 
     const thread = this.threads![threadOwner];
 
-    let run = await OpenAIClient.openai.beta.threads.runs.createAndPoll(
+    const run = await OpenAIClient.openai.beta.threads.runs.createAndPoll(
       thread.id,
       { 
         assistant_id: this.assistant!.id,
@@ -114,13 +121,13 @@ class OpenAIClient {
    * https://github.com/openai/openai-node/blob/master/helpers.md
    * @param threadOwner thread owner in wechat (contact or group chat topic)
    */
-  async getResponseStream(threadOwner: string) {
+  async getResponseStream(threadOwner: ThreadOwner) {
     if (!this.assistant) {
       throw new Error("Assistant has not been initialized. Create assistant before anything else");
     }
 
     if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
-      await this.createThread(threadOwner);
+      throw new Error("No corresponding thread has been found. Init a thread and create messages first.");
     }
 
     const thread = this.threads![threadOwner];

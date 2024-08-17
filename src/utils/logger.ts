@@ -1,17 +1,18 @@
 import { createLogger, format, transports } from "winston";
 import type { LoggerOptions } from "winston";
+import { LOG_LEVEL } from "@config";
 
-const { combine, timestamp, label, printf, colorize } = format;
+const { combine, timestamp, printf, colorize } = format;
 
-const CATEGORY = "CONVO";
+// const CATEGORY = "CONVO";
 
-const customFormat = printf(({ level, message, label, timestamp }) => {
-  return `${timestamp} [${label}] ${level}: ${message}`;
+const customFormat = printf(({ level, message, timestamp }) => {
+  return `${timestamp} ${level}: ${message}`;
 });
 
 const options: LoggerOptions = {
-  level: "debug",
-  format: combine(label({ label: CATEGORY }), timestamp(), colorize(), customFormat),
+  level: LOG_LEVEL,
+  format: combine(timestamp(), colorize(), customFormat),
   transports: [new transports.Console()],
 };
 

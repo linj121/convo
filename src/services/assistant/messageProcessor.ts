@@ -78,7 +78,7 @@ class MessageProcessor {
     const llmClient = llmClients.default;
 
     const matches = message.text().match(/^ *@(神奇海螺|jarvis)/i);
-    if (!matches) throw new Error("Trigger not found");
+    if (!matches) throw new Error("Trigger word not found");
     const extracted_msg = message.text().substring(matches[0].length).trim();
 
     const threadOwner: string = message.room() ? await message.room()!.topic() : message.talker().name();

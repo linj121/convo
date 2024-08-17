@@ -1,23 +1,36 @@
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
+import path from "node:path";
 
 dotenv.config();
+
+const _DEFAULT_DB_PATH: string = path.normalize(`${__dirname}/../../default.db`);
 
 const configSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
-  OPENAI_PROJECT_ID: z.string().default("")
+  OPENAI_PROJECT_ID: z.string().default(""),
+  DATABASE_PATH: z.string().default(_DEFAULT_DB_PATH),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]),
 });
 
 type Config = z.infer<typeof configSchema>;
 
 let config: Config;
 
+const LOG_LEVEL = process.env.LOG_LEVEL || process.env.NODE_ENV === "production" ? "info" : "debug";
+
+/**
+ * Call before accessing configuration
+ * @returns The configuration object
+ */
 function parseConfig(): Config {
   const parsedConfig = configSchema.safeParse({
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_MODEL: process.env.OPENAI_MODEL,
-    OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID
+    OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID,
+    DATABASE_PATH: process.env.DATABASE_PATH,
+    LOG_LEVEL: LOG_LEVEL,
   });
 
   if (!parsedConfig.success) {
@@ -30,5 +43,6 @@ function parseConfig(): Config {
 
 export { 
   config, 
-  parseConfig 
+  parseConfig,
+  LOG_LEVEL
 };

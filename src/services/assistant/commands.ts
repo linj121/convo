@@ -31,8 +31,8 @@ Options:
 -h      display help message
 -v      get current version
 
-For more help on how to use this, head to https://aaa.bbb.ccc
-`;
+For more help on how to use this, head to https://aaa.bbb.ccc`;
+
 const DEFAULT_TIMEZONE = "America/Toronto";
 const DEFAULT_TIMEZONE_ZH = "Asia/Shanghai";
 

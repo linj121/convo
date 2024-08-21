@@ -11,14 +11,15 @@ const configSchema = z.object({
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_PROJECT_ID: z.string().default(""),
   DATABASE_PATH: z.string().default(_DEFAULT_DB_PATH),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]),
+  // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
+  LOG_LEVEL: z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"]),
 });
 
 type Config = z.infer<typeof configSchema>;
 
 let config: Config;
 
-const LOG_LEVEL = process.env.LOG_LEVEL || process.env.NODE_ENV === "production" ? "info" : "debug";
+const LOG_LEVEL = process.env.LOG_LEVEL || process.env.NODE_ENV === "production" ? "info" : "verbose";
 
 /**
  * Call before accessing configuration

@@ -10,6 +10,8 @@ const customFormat = printf(({ level, message, timestamp }) => {
   return `${timestamp} ${level}: ${message}`;
 });
 
+
+// More on logging levels: https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
 const options: LoggerOptions = {
   level: LOG_LEVEL,
   format: combine(timestamp(), colorize(), customFormat),

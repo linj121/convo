@@ -2,6 +2,7 @@ import { config } from "@config";
 import logger from "@logger";
 import LlmRepository from "@data/llm.repository";
 import OpenAI, { NotFoundError } from "openai";
+import { FileBox } from "file-box";
 
 type ThreadOwner = string;
 enum AssistantEnum {
@@ -232,6 +233,13 @@ class OpenAIClient {
         }
       }
     });
+  }
+
+  public static async textToAudio(
+    params: OpenAI.Audio.Speech.SpeechCreateParams
+  ): Promise<Buffer> {
+    const response = await OpenAIClient.openai.audio.speech.create(params);
+    return Buffer.from(await response.arrayBuffer());
   }
 
 }

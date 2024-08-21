@@ -32,6 +32,7 @@
   "dependencies": {
     "better-sqlite3": "^11.1.2",
     "dotenv": "^16.4.5",
+    "file-box": "^1.4.15",
     "openai": "^4.53.0",
     "qrcode": "^1.5.3",
     "tsconfig-paths": "^4.2.0",

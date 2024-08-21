@@ -3,9 +3,11 @@ import { MessageInterface } from "wechaty/impls";
 import AssistantService from "./index";
 import { habitTracker } from "./commands";
 import { MessageType } from "./types";
+import { FileBox } from "file-box";
 import type { Sayable } from "wechaty";
 import { getLlmClients } from "./init";
-import { AssistantEnum } from "@libs/openai";
+import OpenAIClient, { AssistantEnum } from "@libs/openai";
+import path from "node:path";
 
 class MessageProcessor {
   ctx: AssistantService;
@@ -54,9 +56,12 @@ class MessageProcessor {
   
         } else if (/^ *@(神奇海螺|jarvis)/i.test(message_text)) {
         
-          const response = await this.intelliResponse(message);
+          const response = await this.intelliResponse(message, true);
           await MessageProcessor.respond(message, response);
 
+        } else if (/^ *卡布奇诺/i.test(message_text)) {
+          const fileBox = FileBox.fromFile(`${__dirname}/../../../cappucino.mp3`);
+          await MessageProcessor.respond(message, fileBox);
         }
 
       } catch (error) {
@@ -71,7 +76,7 @@ class MessageProcessor {
     }
   }
 
-  async intelliResponse(message: MessageInterface): Promise<string> {
+  private async intelliResponse(message: MessageInterface, tts: boolean = false): Promise<string | FileBox> {
     if (message.type() !== MessageType.Text) { 
       throw new Error(`Expecting message of type of Text, got ${message.type()}`);
     }
@@ -88,6 +93,15 @@ class MessageProcessor {
     const thread_id = await llmClient.createMessage(extracted_msg, threadOwner);
     const response = await llmClient.getResponse(threadOwner, thread_id);
     if (!response) throw new Error("Failed to get response using llm client");
+
+    if (tts) {
+      const audioBuffer = await OpenAIClient.textToAudio({
+        input: response,
+        model: "tts-1",
+        voice: "onyx"
+      });
+      return FileBox.fromBuffer(audioBuffer, "dianwo.mp3");
+    }
 
     const truncated_msg: string = 
       extracted_msg.length >= 15 ? extracted_msg.substring(0, 15) + "..." : extracted_msg;

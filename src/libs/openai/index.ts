@@ -1,22 +1,22 @@
 import { config } from "@config";
 import logger from "@logger";
-import OpenAI from "openai";
+import LlmRepository from "@data/llm.repository";
+import OpenAI, { NotFoundError } from "openai";
 
 type ThreadOwner = string;
 enum AssistantEnum {
   DEFAULT = "default",
   HABIT_TRACKER = "habit_tracker",
 }
+enum Tables {
+  Assistant = "assistant",
+  Thread = "thread",
+}
 
 class OpenAIClient {
   public assistant?: OpenAI.Beta.Assistants.Assistant;
-  /**
-   * threads key: the owner of the thread in wechat, 
-   * either contact or group chat topic
-   */
-  public threads?: Record<ThreadOwner, OpenAI.Beta.Threads.Thread>;
-  public static openai: OpenAI; 
-  public static assistants_pool?: Record<AssistantEnum, OpenAI.Beta.Assistants.Assistant["id"]>;
+  public assistant_name?: AssistantEnum;
+  public static openai: OpenAI;
 
   private constructor() {
     OpenAIClient.openai = new OpenAI({
@@ -26,31 +26,97 @@ class OpenAIClient {
   }
 
   static async init(
-    { assistantCreateOption }: 
-    { assistantCreateOption: OpenAI.Beta.Assistants.AssistantCreateParams }
-  ) {
+    { assistant_name, assistantCreateOption }: 
+    { assistant_name: AssistantEnum, assistantCreateOption: OpenAI.Beta.Assistants.AssistantCreateParams }
+  ): Promise<OpenAIClient> {
     const client = new OpenAIClient();
 
-    client.assistant = await OpenAIClient.openai.beta.assistants.create(assistantCreateOption);
+    await client.initAssistant(assistant_name, assistantCreateOption);
 
     return client;
   }
 
-  async createThread(threadOwner: ThreadOwner) {
-    if (!this.threads) {
-      const thread = await OpenAIClient.openai.beta.threads.create();
-      this.threads = { [threadOwner]: thread };
-      return;
+  private async createAndInsertAssistant(
+    assistantName: AssistantEnum, 
+    assistantCreateOption:OpenAI.Beta.Assistants.AssistantCreateParams
+  ): Promise<OpenAI.Beta.Assistants.Assistant> {
+    try {
+      const created_assistant = await OpenAIClient.openai.beta.assistants.create(assistantCreateOption);
+      // TODO: upsert
+      LlmRepository.insertOne(Tables.Assistant, {
+        str_id: assistantName,
+        actual_id: created_assistant.id,
+      });
+      return created_assistant;
+    } catch (error) {
+      throw new Error(`Asssitant creation for ${assistantName} failed`, { cause: error });
+    }
+  }
+
+  private async initAssistant(
+    assistantName: AssistantEnum, 
+    assistantCreateOption:OpenAI.Beta.Assistants.AssistantCreateParams
+  ) {
+    const assistant_cache = LlmRepository.findOne(
+      Tables.Assistant,
+      { value: assistantName }
+    ) as {
+      name: string,
+      assistant_id: string
+    } | undefined;
+
+    let final_assistant: OpenAI.Beta.Assistants.Assistant | undefined;
+
+    if (!assistant_cache) {
+      final_assistant = await this.createAndInsertAssistant(assistantName, assistantCreateOption);
+    } else {
+      try {      
+        final_assistant = await OpenAIClient.openai.beta.assistants.retrieve(
+          assistant_cache.assistant_id
+        );
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          final_assistant = await this.createAndInsertAssistant(assistantName, assistantCreateOption);
+        } else {
+          throw error;
+        }
+      }
     }
 
-    if (!this.threads.hasOwnProperty(threadOwner)) {
-      const thread = await OpenAIClient.openai.beta.threads.create();
-      this.threads[threadOwner] = thread;
-      return;
+    this.assistant = final_assistant;
+    this.assistant_name = assistantName;
+  }
+
+  private async createAndInsertThread(threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread> {
+    try {
+      const created_thread = await OpenAIClient.openai.beta.threads.create();
+      // TODO: use upsert
+      LlmRepository.insertOne(Tables.Thread, {
+        str_id: threadOwner,
+        actual_id: created_thread.id,
+      });
+      return created_thread;
+    } catch (error) {
+      throw new Error(`Thread creation for ${threadOwner} failed`, { cause: error });
     }
-    
-    throw new Error(`A thread with the owner ${threadOwner} already exists`);
-  }    
+  }
+
+  private async getThreadID(threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread["id"]> {
+    const thread_cache = LlmRepository.findOne(
+      Tables.Thread,
+      { value: threadOwner }
+    ) as {
+      owner: string,
+      thread_id: string
+    } | undefined;
+
+    if (!thread_cache) {
+      const new_thread = await this.createAndInsertThread(threadOwner);
+      return new_thread.id;
+    }
+
+    return thread_cache.thread_id;
+  }
 
   /**
    * Create a message in the thread. 
@@ -58,17 +124,37 @@ class OpenAIClient {
    * @param message Plain text message to be sent
    * @param threadOwner thread owner in wechat (contact or group chat topic)
    */
-  async createMessage(message: string, threadOwner: ThreadOwner) {
-    if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
-      await this.createThread(threadOwner);
+  async createMessage(message: string, threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread["id"]> {
+    // if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
+    //   await this.createThread(threadOwner);
+    // }
+
+    // const thread = this.threads![threadOwner];
+
+    const thread_id = await this.getThreadID(threadOwner);
+
+    const createFromThread = async (threadID: string) => 
+      await OpenAIClient.openai.beta.threads.messages.create(
+        threadID, 
+        {
+          role: "user",
+          content: message,
+        }
+      );
+    
+    try {
+      await createFromThread(thread_id);
+      return thread_id;
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        const new_thread_id = (await this.createAndInsertThread(threadOwner)).id;
+        await createFromThread(new_thread_id);
+        return thread_id;
+      } else {
+        throw new Error(`Failed to create message for ${threadOwner}`, { cause: error });
+      }
     }
 
-    const thread = this.threads![threadOwner];
-
-    await OpenAIClient.openai.beta.threads.messages.create(thread.id, {
-      role: "user",
-      content: message,
-    });
   }
 
   /**
@@ -77,21 +163,17 @@ class OpenAIClient {
    * @param threadOwner thread owner in wechat (contact or group chat topic)
    * @returns aisstant response in plain text
    */
-  async getResponse(threadOwner: ThreadOwner): Promise<string|undefined> {
+  async getResponse(threadOwner: ThreadOwner, threadID?: OpenAI.Beta.Threads.Thread["id"]): Promise<string|undefined> {
     if (!this.assistant) {
       throw new Error("Assistant has not been initialized. Create assistant before anything else");
     }
 
-    if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
-      throw new Error("No corresponding thread has been found. Init a thread and create messages first.");
-    }
-
-    const thread = this.threads![threadOwner];
+    const thread_id = threadID ?? await this.getThreadID(threadOwner);
 
     const run = await OpenAIClient.openai.beta.threads.runs.createAndPoll(
-      thread.id,
+      thread_id,
       { 
-        assistant_id: this.assistant!.id,
+        assistant_id: this.assistant.id,
       }
     );
 
@@ -126,14 +208,10 @@ class OpenAIClient {
       throw new Error("Assistant has not been initialized. Create assistant before anything else");
     }
 
-    if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
-      throw new Error("No corresponding thread has been found. Init a thread and create messages first.");
-    }
-
-    const thread = this.threads![threadOwner];
+    const thread_id = await this.getThreadID(threadOwner);
 
     const run = OpenAIClient.openai.beta.threads.runs
-    .stream(thread.id, {
+    .stream(thread_id, {
       assistant_id: this.assistant.id,
     })
     .on("textCreated", (text) => process.stdout.write("\nassistant > "))
@@ -159,3 +237,6 @@ class OpenAIClient {
 }
 
 export default OpenAIClient;
+export { 
+  AssistantEnum,
+}

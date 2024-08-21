@@ -1,8 +1,9 @@
 import logger from "@logger";
 import { MessageInterface } from "wechaty/impls";
-import { llmClients } from "./init";
+import { getLlmClients } from "./init";
 import { MessageType } from "./types";
 import MsgProcessor from "./messageProcessor";
+import { AssistantEnum } from "@libs/openai";
 
 enum OptionType {
   EVENT = "e",
@@ -104,9 +105,11 @@ function isValid(options: HabitOptions): boolean {
 }
 
 async function llmSummary(text: string, threadOwner: string): Promise<string> {
-  const llmClient = llmClients.habitTrackerLLM;
-  await llmClient.createMessage(text, threadOwner);
-  const llmResponse = await llmClient.getResponse(threadOwner);
+  const llmClient = getLlmClients()[AssistantEnum.HABIT_TRACKER];
+  if(!llmClient) throw new Error(`Failed to get the assistant: ${AssistantEnum.HABIT_TRACKER}`);
+
+  const thread_id = await llmClient.createMessage(text, threadOwner);
+  const llmResponse = await llmClient.getResponse(threadOwner, thread_id);
   if (!llmResponse) {
     throw new Error("Fail to get llm response");
   }

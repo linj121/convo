@@ -19,7 +19,7 @@ type Config = z.infer<typeof configSchema>;
 
 let config: Config;
 
-const LOG_LEVEL = process.env.LOG_LEVEL || process.env.NODE_ENV === "production" ? "info" : "verbose";
+const LOG_LEVEL = process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "info" : "verbose");
 
 /**
  * Call before accessing configuration

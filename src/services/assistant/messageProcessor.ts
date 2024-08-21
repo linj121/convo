@@ -4,7 +4,8 @@ import AssistantService from "./index";
 import { habitTracker } from "./commands";
 import { MessageType } from "./types";
 import type { Sayable } from "wechaty";
-import { llmClients } from "./init";
+import { getLlmClients } from "./init";
+import { AssistantEnum } from "@libs/openai";
 
 class MessageProcessor {
   ctx: AssistantService;
@@ -20,7 +21,7 @@ class MessageProcessor {
       return;
     }
     
-    // Below are for Direct Messages
+    // The below are for Direct Messages
     if (ctx.self()) {
       const listener = ctx.listener();
       if (!listener) throw new Error("Message target cannot be resolved");
@@ -54,15 +55,15 @@ class MessageProcessor {
         } else if (/^ *@(神奇海螺|jarvis)/i.test(message_text)) {
         
           const response = await this.intelliResponse(message);
-          MessageProcessor.respond(message, response);
+          await MessageProcessor.respond(message, response);
 
         }
 
       } catch (error) {
         
-        logger.error(error)
+        logger.error(error);
 
-        MessageProcessor.respond(message, "Something went wrong, please try again later");
+        await MessageProcessor.respond(message, "Something went wrong, please try again later");
 
       }
 
@@ -75,7 +76,8 @@ class MessageProcessor {
       throw new Error(`Expecting message of type of Text, got ${message.type()}`);
     }
 
-    const llmClient = llmClients.default;
+    const llmClient = getLlmClients()[AssistantEnum.DEFAULT];
+    if (!llmClient) throw new Error(`Failed to get the assistant default from llmclients`);
 
     const matches = message.text().match(/^ *@(神奇海螺|jarvis)/i);
     if (!matches) throw new Error("Trigger word not found");
@@ -83,9 +85,8 @@ class MessageProcessor {
 
     const threadOwner: string = message.room() ? await message.room()!.topic() : message.talker().name();
 
-    await llmClient.createMessage(extracted_msg, threadOwner);
-    
-    const response = await llmClient.getResponse(threadOwner);
+    const thread_id = await llmClient.createMessage(extracted_msg, threadOwner);
+    const response = await llmClient.getResponse(threadOwner, thread_id);
     if (!response) throw new Error("Failed to get response using llm client");
 
     const truncated_msg: string = 

@@ -18,7 +18,7 @@ async function init(): Promise<void> {
     await assitantServiceInit();
 
   } catch (error) {
-    logger.error(error);
+    logger.error(`Got the following error when initializing, now quiting: ${error}`);
     process.exit(1);
   }
 }

@@ -2,9 +2,18 @@ import { config } from "@config";
 import logger from "@logger";
 import LlmRepository from "@data/llm.repository";
 import OpenAI, { NotFoundError } from "openai";
-import { FileBox } from "file-box";
+import { MessageInterface } from "wechaty/impls";
+import { TranscriptionCreateParams } from "openai/resources/audio/transcriptions";
 
 type ThreadOwner = string;
+
+// Override SpeechCreateParams so that we can make these props optional
+// and give them default values
+interface SpeechParams extends Omit<OpenAI.Audio.Speech.SpeechCreateParams, "model" | "voice"> {
+  model?: OpenAI.Audio.Speech.SpeechCreateParams["model"]
+  voice?: OpenAI.Audio.Speech.SpeechCreateParams["voice"]
+}
+
 enum AssistantEnum {
   DEFAULT = "default",
   HABIT_TRACKER = "habit_tracker",
@@ -18,12 +27,18 @@ class OpenAIClient {
   public assistant?: OpenAI.Beta.Assistants.Assistant;
   public assistant_name?: AssistantEnum;
   public static openai: OpenAI;
+  public static SpeechParamsDefaults: Required<Pick<SpeechParams, "model" | "voice">>;
 
   private constructor() {
     OpenAIClient.openai = new OpenAI({
       apiKey: config.OPENAI_API_KEY,
       project: config.OPENAI_PROJECT_ID || undefined
     });
+    OpenAIClient.SpeechParamsDefaults = {
+      model: "tts-1",
+      // Use tts-1 instead of tts-1-hd because it's more affordable and faster in response
+      voice: config.OPENAI_TTS_VOICE
+    };
   }
 
   static async init(
@@ -35,6 +50,10 @@ class OpenAIClient {
     await client.initAssistant(assistant_name, assistantCreateOption);
 
     return client;
+  }
+
+  public static async getThreadOwner(ctx: MessageInterface): Promise<string> {
+    return ctx.room() ? await ctx.room()!.topic() : ctx.talker().name();
   }
 
   private async createAndInsertAssistant(
@@ -235,11 +254,47 @@ class OpenAIClient {
     });
   }
 
-  public static async textToAudio(
-    params: OpenAI.Audio.Speech.SpeechCreateParams
-  ): Promise<Buffer> {
+  /**
+   * https://platform.openai.com/docs/api-reference/audio/createSpeech
+   * @param speechParams 
+   * @param speechParams.input text input to be tts-ed
+   * @param speechParams.model Optional. Defaults to `tts-1`
+   * @param speechParams.voice Optional. Defaults to `config.OPENAI_TTS_VOICE`
+   * @param speechParams.response_format Optional. Defaults to `mp3`
+   * @param speechParams.speed Optional. Defaults to `1`
+   * @returns A buffer containing the speech audio content
+   */
+  public static async textToSpeech(speechParams: SpeechParams): Promise<Buffer> {
+    const params = {...speechParams, ...OpenAIClient.SpeechParamsDefaults};
     const response = await OpenAIClient.openai.audio.speech.create(params);
     return Buffer.from(await response.arrayBuffer());
+  }
+
+  /**
+   * 
+   * @param speech 
+   * @returns 
+   */
+  public static async speechToText(
+    speech: TranscriptionCreateParams["file"]
+  ): Promise<string> {
+    const transcription = await OpenAIClient.openai.audio.transcriptions.create({
+      file: speech,
+      model: "whisper-1",
+      response_format: "json",
+    });
+    return transcription.text;
+  }
+
+  public async submitAndGetResponseFromAssistant(
+    message: string,
+    threadOwner: ThreadOwner,
+  ): Promise<string> {
+    const threadID = await this.createMessage(message, threadOwner);
+    // Optimize response time by feeding threadID to this.getResponse 
+    const response = await this.getResponse(threadOwner, threadID);
+    if (!response) throw new Error(`Failed to get response from ${threadOwner} w/ id ${threadID}`);
+    return response;
   }
 
 }

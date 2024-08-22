@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
 import path from "node:path";
+import OpenAI from 'openai';
 
 dotenv.config();
 
@@ -10,6 +11,8 @@ const configSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
   OPENAI_MODEL: z.string().default("gpt-4o-mini"),
   OPENAI_PROJECT_ID: z.string().default(""),
+   // https://platform.openai.com/docs/guides/text-to-speech/quickstart
+  OPENAI_TTS_VOICE: z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx"),
   DATABASE_PATH: z.string().default(_DEFAULT_DB_PATH),
   // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
   LOG_LEVEL: z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"]),
@@ -30,6 +33,7 @@ function parseConfig(): Config {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     OPENAI_MODEL: process.env.OPENAI_MODEL,
     OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID,
+    OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE,
     DATABASE_PATH: process.env.DATABASE_PATH,
     LOG_LEVEL: LOG_LEVEL,
   });

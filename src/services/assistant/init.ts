@@ -18,9 +18,11 @@ const llmPrompts: Record<AssistantEnum, string | null> = {
 
 let llmClients: Partial<Record<keyof typeof llmPrompts, OpenAIClient>> = {}; 
 
+/**
+ * Initialize openai assistants with their corresponding instruction/prompt
+ */
 async function init(): Promise<void> {
   for (const key of Object.keys(llmPrompts) as Array<keyof typeof llmPrompts>) {
-    // if (!llmPrompts.hasOwnProperty(key)) continue;
 
     const client = await OpenAIClient.init({
       assistant_name: key,
@@ -31,19 +33,23 @@ async function init(): Promise<void> {
         instructions: llmPrompts[key],
       }
     });
-    // console.log(`Current key: ${key}`);
-    // console.log(`Got client: ${client}, client name: ${client.assistant_name}`);
     llmClients[key] = client;
   }
-  // console.log(JSON.stringify(llmClients));
 }
 
 function getLlmClients(): typeof llmClients {
   return llmClients;
 }
 
+function getLlmClient(client: AssistantEnum): OpenAIClient {
+  const resultClient = getLlmClients()[client];
+  if (!resultClient) throw new Error(`Failed to get the client ${client}`);
+  return resultClient;
+}
+
 export default init;
 export { 
   llmClients,
-  getLlmClients
+  getLlmClient,
+  getLlmClients,
 }

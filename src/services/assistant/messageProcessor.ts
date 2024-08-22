@@ -5,12 +5,11 @@ import { habitTracker } from "./commands";
 import { MessageType } from "./types";
 import { FileBox } from "file-box";
 import type { Sayable } from "wechaty";
-import { getLlmClients } from "./init";
-import OpenAIClient, { AssistantEnum } from "@libs/openai";
-import path from "node:path";
-
+import chatbot, { AllowedChatbotInput, chatbotTrigger } from "./chatbot";
+import { NotTriggeredError } from "@utils/errors";
 class MessageProcessor {
-  ctx: AssistantService;
+  public ctx: AssistantService;
+  // public static rules: Record<string, Record<string, string>>;
 
   constructor(ctx: AssistantService) {
     this.ctx = ctx;
@@ -33,19 +32,35 @@ class MessageProcessor {
     }
   }
 
-  async process(message: MessageInterface) {
-    /**
-     * Skip processing the message if it's older than the spawn time of our wechaty app 
-     */
+  public async handleChatbot(message: MessageInterface): Promise<void> {
+    try {
+      const [textResponse, speech] = await chatbot(message, true);
+      await MessageProcessor.respond(message, textResponse);
+      if (speech) await MessageProcessor.respond(message, speech);
+    } catch (error) {
+      if (error instanceof NotTriggeredError) return;
+      else throw error;
+    }
+  }
+
+  public async process(message: MessageInterface): Promise<void> {
+    // Skip processing the message if it's older than the spawn time of our wechaty app 
     if (message.date().getTime() < this.ctx.initializedAt) return;
 
     logger.info(`on(message) ${message.toString()}`);
 
     if (
-      message.room() && 
+      message.room() &&
       (await message.room()!.topic()) === "罗伯特" && 
-      message.type() === MessageType.Text
+      [MessageType.Text, MessageType.Audio].includes(message.type())
     ) {
+      // Handle audio message here
+      if (message.type() === MessageType.Audio) {
+        return await this.handleChatbot(message);
+      }
+
+      // Handle text message below
+
       const message_text = message.text();
 
       try {
@@ -54,14 +69,15 @@ class MessageProcessor {
 
           await habitTracker(message);
   
-        } else if (/^ *@(神奇海螺|jarvis)/i.test(message_text)) {
-        
-          const response = await this.intelliResponse(message, true);
-          await MessageProcessor.respond(message, response);
+        } else if (chatbotTrigger[message.type() as AllowedChatbotInput].test(message_text)) {
+          
+          await this.handleChatbot(message);
 
         } else if (/^ *卡布奇诺/i.test(message_text)) {
+
           const fileBox = FileBox.fromFile(`${__dirname}/../../../cappucino.mp3`);
           await MessageProcessor.respond(message, fileBox);
+
         }
 
       } catch (error) {
@@ -74,45 +90,6 @@ class MessageProcessor {
 
       return;
     }
-  }
-
-  private async intelliResponse(message: MessageInterface, tts: boolean = false): Promise<string | FileBox> {
-    if (message.type() !== MessageType.Text) { 
-      throw new Error(`Expecting message of type of Text, got ${message.type()}`);
-    }
-
-    const llmClient = getLlmClients()[AssistantEnum.DEFAULT];
-    if (!llmClient) throw new Error(`Failed to get the assistant default from llmclients`);
-
-    const matches = message.text().match(/^ *@(神奇海螺|jarvis)/i);
-    if (!matches) throw new Error("Trigger word not found");
-    const extracted_msg = message.text().substring(matches[0].length).trim();
-
-    const threadOwner: string = message.room() ? await message.room()!.topic() : message.talker().name();
-
-    const thread_id = await llmClient.createMessage(extracted_msg, threadOwner);
-    const response = await llmClient.getResponse(threadOwner, thread_id);
-    if (!response) throw new Error("Failed to get response using llm client");
-
-    if (tts) {
-      const audioBuffer = await OpenAIClient.textToAudio({
-        input: response,
-        model: "tts-1",
-        voice: "onyx"
-      });
-      return FileBox.fromBuffer(audioBuffer, "dianwo.mp3");
-    }
-
-    const truncated_msg: string = 
-      extracted_msg.length >= 15 ? extracted_msg.substring(0, 15) + "..." : extracted_msg;
-    const hydrated_response: string = 
-      `@${message.talker().name()}\n` +
-      `${truncated_msg}\n` +
-      "===============\n" +
-      response;
-
-    return hydrated_response;
-
   }
 
 }

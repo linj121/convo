@@ -1,7 +1,21 @@
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
 import path from "node:path";
-import OpenAI from 'openai';
+
+/**
+ * Empty string need to be converted to `undefined` before being sent to zod,
+ * to ensure `.default()` is working as expected!
+ * @param rule A chain of zod rules: `z.strin().min(10)...`
+ * @returns A function that that takes the rule and return a regular constraint
+ */
+function handleEmptyString<T extends z.ZodTypeAny>(rule: T) {
+  return z
+    .string()
+    .transform((val) =>
+      typeof val === "string" && val === "" ? undefined : val,
+    )
+    .pipe(rule);
+}
 
 dotenv.config();
 
@@ -9,11 +23,13 @@ const _DEFAULT_DB_PATH: string = path.normalize(`${__dirname}/../../default.db`)
 
 const configSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
-  OPENAI_MODEL: z.string().default("gpt-4o-mini"),
-  OPENAI_PROJECT_ID: z.string().default(""),
+  OPENAI_MODEL: handleEmptyString(z.string().default("gpt-4o-mini")),
+  OPENAI_PROJECT_ID: handleEmptyString(z.string().default("")),
    // https://platform.openai.com/docs/guides/text-to-speech/quickstart
-  OPENAI_TTS_VOICE: z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx"),
-  DATABASE_PATH: z.string().default(_DEFAULT_DB_PATH),
+  OPENAI_TTS_VOICE: handleEmptyString(
+    z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx")
+  ),
+  DATABASE_PATH: handleEmptyString(z.string().default(_DEFAULT_DB_PATH)),
   // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
   LOG_LEVEL: z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"]),
 });

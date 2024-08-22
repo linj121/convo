@@ -81,9 +81,12 @@ class OpenAIClient {
       Tables.Assistant,
       { value: assistantName }
     ) as {
+      id: string,
       name: string,
       assistant_id: string
     } | undefined;
+    
+    logger.debug(`Found assistant from db: ${JSON.stringify(assistant_cache)}`);
 
     let final_assistant: OpenAI.Beta.Assistants.Assistant | undefined;
 
@@ -96,6 +99,7 @@ class OpenAIClient {
         );
       } catch (error) {
         if (error instanceof NotFoundError) {
+          logger.debug(`assistant id not found from openai backend: ${assistant_cache.assistant_id}`);
           final_assistant = await this.createAndInsertAssistant(assistantName, assistantCreateOption);
         } else {
           throw error;
@@ -126,6 +130,7 @@ class OpenAIClient {
       Tables.Thread,
       { value: threadOwner }
     ) as {
+      id: string,
       owner: string,
       thread_id: string
     } | undefined;

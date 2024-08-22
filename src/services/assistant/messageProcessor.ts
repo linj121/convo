@@ -51,7 +51,7 @@ class MessageProcessor {
 
     if (
       message.room() &&
-      (await message.room()!.topic()) === "罗伯特" && 
+      ["罗伯特", "今天玩啥 哇酷哇酷！"].includes(await message.room()!.topic()) && 
       [MessageType.Text, MessageType.Audio].includes(message.type())
     ) {
       // Handle audio message here

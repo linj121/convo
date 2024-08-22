@@ -18,6 +18,7 @@ class DatabaseSetup {
    * @returns The database that has been set up
    */
   public static setupDB(db_path: string): Database {
+    if (!db_path) throw new Error("Empty db_path is not accepted!");
     let db: Database;
     try {
       db = new BetterSqlite3(db_path, { verbose: logger.debug });

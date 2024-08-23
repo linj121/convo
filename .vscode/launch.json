@@ -5,11 +5,25 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "node:test via pnpm",
+      "name": "tests via pnpm",
       "request": "launch",
       "runtimeArgs": ["run-script", "test"],
       "runtimeExecutable": "pnpm",
       "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "type": "node"
+    },
+    {
+      "name": "debug the whole ts program",
+      "request": "launch",
+      "envFile": "${workspaceFolder}/.env",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["run-script", "serve"],
+      // "program": "${workspaceFolder}/dist/index.js",
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.(m|c|)js",
+        "!**/node_modules/**"
+      ],
       "type": "node"
     }
   ]

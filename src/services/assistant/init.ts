@@ -1,9 +1,9 @@
 import { config } from "@config";
-import OpenAIClient from "@libs/openai";
+import OpenAIClient, { AssistantEnum } from "@libs/openai";
 
-const llmPrompts: Record<string, string | null> = {
-  "default": null,
-  "habitTrackerLLM": 
+const llmPrompts: Record<AssistantEnum, string | null> = {
+  [AssistantEnum.DEFAULT]: null,
+  [AssistantEnum.HABIT_TRACKER]: 
     "你是一名职业夸夸师，现在我们的微信群里时不时会有人打卡，比如刷力扣上的算法题，健身等等。" +
     "每一次你都收到一份结构化的数据，例如time是打卡的时间，name是打卡人的名字，event是打卡的事件类型（力扣，健身等），" +
     "note是打卡的人写的笔记。" +
@@ -16,13 +16,16 @@ const llmPrompts: Record<string, string | null> = {
 }
 
 
-let llmClients: Record<keyof typeof llmPrompts, OpenAIClient> = {}; 
+let llmClients: Partial<Record<keyof typeof llmPrompts, OpenAIClient>> = {}; 
 
+/**
+ * Initialize openai assistants with their corresponding instruction/prompt
+ */
 async function init(): Promise<void> {
-  for (const key in llmPrompts) {
-    if (!llmPrompts.hasOwnProperty(key)) continue;
+  for (const key of Object.keys(llmPrompts) as Array<keyof typeof llmPrompts>) {
 
-    llmClients[key] = await OpenAIClient.init({
+    const client = await OpenAIClient.init({
+      assistant_name: key,
       assistantCreateOption: {
         name: key + new Date().toISOString(),
         model: config.OPENAI_MODEL,
@@ -30,10 +33,23 @@ async function init(): Promise<void> {
         instructions: llmPrompts[key],
       }
     });
+    llmClients[key] = client;
   }
+}
+
+function getLlmClients(): typeof llmClients {
+  return llmClients;
+}
+
+function getLlmClient(client: AssistantEnum): OpenAIClient {
+  const resultClient = getLlmClients()[client];
+  if (!resultClient) throw new Error(`Failed to get the client ${client}`);
+  return resultClient;
 }
 
 export default init;
 export { 
-  llmClients, 
+  llmClients,
+  getLlmClient,
+  getLlmClients,
 }

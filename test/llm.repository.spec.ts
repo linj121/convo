@@ -11,7 +11,7 @@ const _TEST_DB_PATH = path.join(__dirname, "test.db");
 
 describe("LlmRepository Tests", function () {
   before(function () {
-    parseConfig();
+    const config = parseConfig();
     DB.setupDB(_TEST_DB_PATH);
     LlmRepository.init_database();
   });
@@ -119,6 +119,15 @@ describe("LlmRepository Tests", function () {
       name: "test_name",
       assistant_id: "new_assistant_id",
     });
+  });
+
+  it("should return undefined when target value is not found in the assistant table", function () {
+    LlmRepository.init_statements();
+    const emptyResult = LlmRepository.findOne("assistant", {
+      value: "non_existent_value"
+    });
+
+    expect(emptyResult).to.equal(undefined);
   });
 
   it("should insert data into the thread table", function () {

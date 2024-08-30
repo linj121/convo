@@ -9,6 +9,7 @@ async function init(): Promise<void> {
   try {
     const config = parseConfig();
     logger.info("Configuration parsed and loaded successfully");
+    logger.debug("Loaded configuration -> " + JSON.stringify(config));
 
     DatabaseSetup.setupDB(config.DATABASE_PATH);
     logger.info("Database set up success");

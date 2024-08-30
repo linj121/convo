@@ -7,15 +7,19 @@ import { FileBox } from "file-box";
 import type { Sayable } from "wechaty";
 import chatbot, { AllowedChatbotInput, chatbotTrigger } from "./chatbot";
 import { NotTriggeredError } from "@utils/errors";
+import { config } from "@config";
 class MessageProcessor {
   public ctx: AssistantService;
-  // public static rules: Record<string, Record<string, string>>;
+  public static groupChatWhiteList = new Set<string>(config.WECHATY_GROUPCHAT_WHITELIST);
+  public static contactWhiteList = new Set<string>(config.WECHATY_CONTACT_WHITELIST);
+  public static allowedMediaType = new Set<MessageType>([MessageType.Text, MessageType.Audio]);
+
 
   constructor(ctx: AssistantService) {
     this.ctx = ctx;
   }
 
-  static async respond(ctx: MessageInterface, response: Sayable): Promise<void> {
+  public static async respond(ctx: MessageInterface, response: Sayable): Promise<void> {
     const room = ctx.room();
     if (room) {
       await room.say(response);
@@ -30,6 +34,33 @@ class MessageProcessor {
     } else {
       await ctx.say(response);
     }
+  }
+
+  public static async getContactName(ctx: MessageInterface): Promise<string|undefined> {
+    if (ctx.room()) return undefined;
+
+    if (ctx.self()) return ctx.listener()!.name();
+    else return ctx.talker().name();
+  }
+
+  public static isFromGroupChat(ctx: MessageInterface): boolean {
+    return ctx.room() ? true : false;
+  }
+
+  public static async messagePolicyPassed(ctx: MessageInterface): Promise<boolean> {
+    // Checking if message of the media type should be processed
+    const mediaTypeCheckPassed: boolean = MessageProcessor.allowedMediaType.has(ctx.type());
+    if (!mediaTypeCheckPassed) return false;
+
+    // Checking message source and match against white lists
+    const isFromGroupChat = MessageProcessor.isFromGroupChat(ctx);
+
+    if (isFromGroupChat) {
+      return MessageProcessor.groupChatWhiteList.has(await ctx.room()!.topic());
+    }
+
+    const contactName = await MessageProcessor.getContactName(ctx);
+    return MessageProcessor.contactWhiteList.has(contactName ?? "");
   }
 
   public async handleChatbot(message: MessageInterface): Promise<void> {
@@ -49,11 +80,7 @@ class MessageProcessor {
 
     logger.info(`on(message) ${message.toString()}`);
 
-    if (
-      message.room() &&
-      ["罗伯特", "今天玩啥 哇酷哇酷！"].includes(await message.room()!.topic()) && 
-      [MessageType.Text, MessageType.Audio].includes(message.type())
-    ) {
+    if (await MessageProcessor.messagePolicyPassed(message)) {
       // Handle audio message here
       if (message.type() === MessageType.Audio) {
         return await this.handleChatbot(message);

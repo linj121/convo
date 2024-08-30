@@ -4,9 +4,15 @@ A feature-rich instant message assistant
 
 ## Quick Start
 
-### Dev Containers
+### Environtment Variables
 
-`pnpm install`, Y when prompted
+`cp .env.example .env`
+
+Fill out all required env variables
+
+### Build and Start the Program
+
+`pnpm install`, `Y` when prompted
 
 `pnpm start` to re-compile and start the nodejs program
 

@@ -53,7 +53,11 @@ class OpenAIClient {
   }
 
   public static async getThreadOwner(ctx: MessageInterface): Promise<string> {
-    return ctx.room() ? await ctx.room()!.topic() : ctx.talker().name();
+    if (ctx.room()) return await ctx.room()!.topic();
+
+    if (ctx.self()) return ctx.listener()!.name();
+    
+    return ctx.talker().name();
   }
 
   private async createAndInsertAssistant(

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
-import path from "node:path";
+import path, { parse } from "node:path";
 
 /**
  * Empty string need to be converted to `undefined` before being sent to zod,
@@ -17,6 +17,16 @@ function handleEmptyString<T extends z.ZodTypeAny>(rule: T) {
     .pipe(rule);
 }
 
+/**
+ * Parse a comma separeted string and transform it to an array of strings
+ */
+function parseCSVString() {
+  return z
+    .string()
+    .transform((value) => value.split(','))
+    .pipe(z.array(z.string().trim()));
+}
+
 dotenv.config();
 
 const _DEFAULT_DB_PATH: string = path.normalize(`${__dirname}/../../default.db`);
@@ -29,6 +39,9 @@ const configSchema = z.object({
   OPENAI_TTS_VOICE: handleEmptyString(
     z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx")
   ),
+  WECHATY_CHATBOT_NAME: parseCSVString(),
+  WECHATY_GROUPCHAT_WHITELIST: parseCSVString(),
+  WECHATY_CONTACT_WHITELIST: parseCSVString(),
   DATABASE_PATH: handleEmptyString(z.string().default(_DEFAULT_DB_PATH)),
   // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
   LOG_LEVEL: z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"]),
@@ -38,7 +51,7 @@ type Config = z.infer<typeof configSchema>;
 
 let config: Config;
 
-const LOG_LEVEL = process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "info" : "verbose");
+const LOG_LEVEL = process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "info" : "debug");
 
 /**
  * Call before accessing configuration
@@ -50,6 +63,9 @@ function parseConfig(): Config {
     OPENAI_MODEL: process.env.OPENAI_MODEL,
     OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID,
     OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE,
+    WECHATY_CHATBOT_NAME: process.env.WECHATY_CHATBOT_NAME,
+    WECHATY_GROUPCHAT_WHITELIST: process.env.WECHATY_GROUPCHAT_WHITELIST,
+    WECHATY_CONTACT_WHITELIST: process.env.WECHATY_CONTACT_WHITELIST,
     DATABASE_PATH: process.env.DATABASE_PATH,
     LOG_LEVEL: LOG_LEVEL,
   });

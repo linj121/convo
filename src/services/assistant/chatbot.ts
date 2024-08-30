@@ -7,6 +7,7 @@ import { FileBox, FileBoxInterface } from "file-box";
 import { toFile } from "openai/uploads";
 import logger from "@logger";
 import { NotTriggeredError } from "@utils/errors";
+import { config } from "@config";
 
 export type AllowedChatbotInput = Extract<MessageType, MessageType.Text | MessageType.Audio>;
 
@@ -21,8 +22,8 @@ const allowedChatbotInput = new Set<MessageType>([
 ]);
 
 const chatbotTrigger: Record<AllowedChatbotInput, RegExp> = {
-  [MessageType.Text]: /^ *@(神奇海螺|海螺|螺|jarvis)/i,
-  [MessageType.Audio]: /^ *(神奇海螺|海螺|jarvis)/i
+  [MessageType.Text]: new RegExp(`^ *@(${config.WECHATY_CHATBOT_NAME.join("|")})`, "i"),
+  [MessageType.Audio]: new RegExp(`^ *(${config.WECHATY_CHATBOT_NAME.join("|")})`, "i"),
 }
 
 function validateChatbotInput(message: MessageInterface): void {

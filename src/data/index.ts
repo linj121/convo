@@ -1,35 +1,68 @@
-import BetterSqlite3 from "better-sqlite3";
 import logger from "@logger";
+import { Prisma, PrismaClient } from "@prisma/client";
 
-type Database = BetterSqlite3.Database;
 
 class DatabaseSetup {
-  static _database?: Database;
+  public static prismaClient = new PrismaClient({
+    log: [
+      {
+        emit: 'event',
+        level: 'query',
+      },
+      {
+        emit: 'event',
+        level: 'error',
+      },
+      {
+        emit: 'event',
+        level: 'info',
+      },
+      {
+        emit: 'event',
+        level: 'warn',
+      },
+    ],
+  });
 
-  static get database(): Database {
-    if (this._database === undefined) {
-      throw new Error("Please setup DB before using it");
+  public static async initialize(): Promise<void> {
+    try {
+      this.setupEventListeners();
+      await this.prismaClient.$connect();
+    } catch (error) {
+      throw new Error("Failed to initialize db", { cause: error });
     }
-    return this._database;
   }
 
   /**
-   * Call before accessing the database
-   * @returns The database that has been set up
+   * Redirect events to our custom logger
    */
-  public static setupDB(db_path: string): Database {
-    if (!db_path) throw new Error("Empty db_path is not accepted!");
-    let db: Database;
-    try {
-      db = new BetterSqlite3(db_path, { verbose: logger.debug });
-      this._database = db;
-    } catch (error) {
-      throw new Error("Failed to setup db");    
-    }
-    return db;
+  private static setupEventListeners(): void {
+    const logEventTemplate = (e: Prisma.LogEvent) =>
+      "Timestamp: " + e.timestamp + "\n" +
+      "Target: "    + e.target    + "\n" +
+      "Message: "   + e.message;
+
+    const queryEventTemplate = (e: Prisma.QueryEvent) =>
+      "Timestamp: " + e.timestamp + "\n" +
+      "Target: "    + e.target    + "\n" +
+      "Query: "     + e.query     + "\n" +
+      "Params: "    + e.params    + "\n" +
+      "Duration: "  + e.duration;
+
+    this.prismaClient.$on("info", (e: Prisma.LogEvent) => {
+      logger.info(logEventTemplate(e));
+    });
+    this.prismaClient.$on("query", (e: Prisma.QueryEvent) => {
+      logger.verbose(queryEventTemplate(e));
+    });
+    this.prismaClient.$on("warn", (e: Prisma.LogEvent) => {
+      logger.warn(logEventTemplate(e));
+    });
+    this.prismaClient.$on("error", (e: Prisma.LogEvent) => {
+      logger.error(logEventTemplate(e));
+    });
   }
 }
 
 
 export default DatabaseSetup;
-export type { Database };

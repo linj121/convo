@@ -1,0 +1,22 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./default.db"
+}
+
+model assistant {
+  id           Int    @id @default(autoincrement())
+  name         String @unique(map: "sqlite_autoindex_assistant_1")
+  assistant_id String
+  created_at   String @default("CURRENT_TIMESTAMP")
+}
+
+model thread {
+  id         Int    @id @default(autoincrement())
+  owner      String @unique(map: "sqlite_autoindex_thread_1")
+  thread_id  String
+  created_at String @default("CURRENT_TIMESTAMP")
+}

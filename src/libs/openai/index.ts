@@ -1,9 +1,11 @@
 import { config } from "@config";
 import logger from "@logger";
-import LlmRepository from "@data/llm.repository";
 import OpenAI, { NotFoundError } from "openai";
 import { MessageInterface } from "wechaty/impls";
 import { TranscriptionCreateParams } from "openai/resources/audio/transcriptions";
+import { AssistantRepository, ThreadRepository } from "@data/repositories";
+import type { assistant } from "@prisma/client";
+import { DataRepositoryNotFoundError } from "@utils/errors";
 
 type ThreadOwner = string;
 
@@ -17,10 +19,6 @@ interface SpeechParams extends Omit<OpenAI.Audio.Speech.SpeechCreateParams, "mod
 enum AssistantEnum {
   DEFAULT = "default",
   HABIT_TRACKER = "habit_tracker",
-}
-enum Tables {
-  Assistant = "assistant",
-  Thread = "thread",
 }
 
 class OpenAIClient {
@@ -66,10 +64,10 @@ class OpenAIClient {
   ): Promise<OpenAI.Beta.Assistants.Assistant> {
     try {
       const created_assistant = await OpenAIClient.openai.beta.assistants.create(assistantCreateOption);
-      // TODO: upsert
-      LlmRepository.insertOne(Tables.Assistant, {
-        str_id: assistantName,
-        actual_id: created_assistant.id,
+      // TODO: Mark, AssistantRepository
+      await AssistantRepository.upsert({
+        assistant_id: created_assistant.id,
+        name: assistantName
       });
       return created_assistant;
     } catch (error) {
@@ -79,35 +77,32 @@ class OpenAIClient {
 
   private async initAssistant(
     assistantName: AssistantEnum, 
-    assistantCreateOption:OpenAI.Beta.Assistants.AssistantCreateParams
+    assistantCreateOption: OpenAI.Beta.Assistants.AssistantCreateParams
   ) {
-    const assistant_cache = LlmRepository.findOne(
-      Tables.Assistant,
-      { value: assistantName }
-    ) as {
-      id: string,
-      name: string,
-      assistant_id: string
-    } | undefined;
-    
-    logger.debug(`Found assistant from db: ${JSON.stringify(assistant_cache)}`);
-
+    // TODO: Mark, AssistantRepository
+    let assistant_cache: assistant | undefined;
     let final_assistant: OpenAI.Beta.Assistants.Assistant | undefined;
 
-    if (!assistant_cache) {
-      final_assistant = await this.createAndInsertAssistant(assistantName, assistantCreateOption);
-    } else {
+    try {
+      assistant_cache = await AssistantRepository.findOneByAssistantName(assistantName);
+      logger.debug(`Found assistant from db: ${JSON.stringify(assistant_cache)}`);
+
       try {      
-        final_assistant = await OpenAIClient.openai.beta.assistants.retrieve(
-          assistant_cache.assistant_id
-        );
+        final_assistant = await OpenAIClient.openai.beta.assistants.retrieve(assistant_cache.assistant_id);
       } catch (error) {
         if (error instanceof NotFoundError) {
-          logger.debug(`assistant id not found from openai backend: ${assistant_cache.assistant_id}`);
+          logger.debug(`assistant_id not found from openai backend: ${assistant_cache.assistant_id}`);
           final_assistant = await this.createAndInsertAssistant(assistantName, assistantCreateOption);
         } else {
           throw error;
         }
+      }
+
+    } catch (error) {
+      if (error instanceof DataRepositoryNotFoundError) {
+        final_assistant = await this.createAndInsertAssistant(assistantName, assistantCreateOption);
+      } else {
+        throw new Error("Failed to initialize assistants for openai client", { cause: error });
       }
     }
 
@@ -118,10 +113,10 @@ class OpenAIClient {
   private async createAndInsertThread(threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread> {
     try {
       const created_thread = await OpenAIClient.openai.beta.threads.create();
-      // TODO: use upsert
-      LlmRepository.insertOne(Tables.Thread, {
-        str_id: threadOwner,
-        actual_id: created_thread.id,
+      // TODO: Mark, ThreadRepository.upsert
+      await ThreadRepository.upsert({
+        owner: threadOwner,
+        thread_id: created_thread.id
       });
       return created_thread;
     } catch (error) {
@@ -130,21 +125,18 @@ class OpenAIClient {
   }
 
   private async getThreadID(threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread["id"]> {
-    const thread_cache = LlmRepository.findOne(
-      Tables.Thread,
-      { value: threadOwner }
-    ) as {
-      id: string,
-      owner: string,
-      thread_id: string
-    } | undefined;
-
-    if (!thread_cache) {
-      const new_thread = await this.createAndInsertThread(threadOwner);
-      return new_thread.id;
+    // TODO: Mark, ThreadRepository.findOneByThreadOwner
+    try {
+      const thread = await ThreadRepository.findOneByThreadOwner(threadOwner);
+      return thread.thread_id;
+    } catch (error) {
+      if (error instanceof DataRepositoryNotFoundError) {
+        const new_thread = await this.createAndInsertThread(threadOwner);
+        return new_thread.id;
+      } else {
+        throw error;
+      }
     }
-
-    return thread_cache.thread_id;
   }
 
   /**
@@ -190,6 +182,7 @@ class OpenAIClient {
    * Run a thread and get the last message from the updated thread.
    * Ref: https://platform.openai.com/docs/api-reference/messages/listMessages
    * @param threadOwner thread owner in wechat (contact or group chat topic)
+   * @param threadID Optional. Supply this arg to avoid calling OpenAI API
    * @returns aisstant response in plain text
    */
   async getResponse(threadOwner: ThreadOwner, threadID?: OpenAI.Beta.Threads.Thread["id"]): Promise<string|undefined> {
@@ -300,7 +293,7 @@ class OpenAIClient {
     threadOwner: ThreadOwner,
   ): Promise<string> {
     const threadID = await this.createMessage(message, threadOwner);
-    // Optimize response time by feeding threadID to this.getResponse 
+    // Optimize response time by supplying threadID to this.getResponse 
     const response = await this.getResponse(threadOwner, threadID);
     if (!response) throw new Error(`Failed to get response from ${threadOwner} w/ id ${threadID}`);
     return response;

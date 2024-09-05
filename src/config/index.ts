@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
-import path, { parse } from "node:path";
+import path from "node:path";
 
 /**
  * Empty string need to be converted to `undefined` before being sent to zod,
@@ -42,7 +42,7 @@ const configSchema = z.object({
   WECHATY_CHATBOT_NAME: parseCSVString(),
   WECHATY_GROUPCHAT_WHITELIST: parseCSVString(),
   WECHATY_CONTACT_WHITELIST: parseCSVString(),
-  DATABASE_PATH: handleEmptyString(z.string().default(_DEFAULT_DB_PATH)),
+  DATABASE_URL: handleEmptyString(z.string().default(_DEFAULT_DB_PATH)),
   // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
   LOG_LEVEL: z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"]),
 });
@@ -66,7 +66,7 @@ function parseConfig(): Config {
     WECHATY_CHATBOT_NAME: process.env.WECHATY_CHATBOT_NAME,
     WECHATY_GROUPCHAT_WHITELIST: process.env.WECHATY_GROUPCHAT_WHITELIST,
     WECHATY_CONTACT_WHITELIST: process.env.WECHATY_CONTACT_WHITELIST,
-    DATABASE_PATH: process.env.DATABASE_PATH,
+    DATABASE_URL: process.env.DATABASE_URL,
     LOG_LEVEL: LOG_LEVEL,
   });
 

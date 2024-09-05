@@ -1,14 +1,14 @@
 import init from "init";
 import { getLlmClients } from "@services/assistant/init";
-import LlmRepository from "@data/llm.repository";
+// import LlmRepository from "@data/llm.repository";
 
 async function before() {
   await init();
 }
 
 async function clean(assistant_name: string, owner: string) {
-  LlmRepository.database.exec(`DELETE FROM assistant WHERE name = '${assistant_name}'`);
-  LlmRepository.database.exec(`DELETE FROM thread WHERE owner = '${owner}'`);
+  // LlmRepository.database.exec(`DELETE FROM assistant WHERE name = '${assistant_name}'`);
+  // LlmRepository.database.exec(`DELETE FROM thread WHERE owner = '${owner}'`);
 }
 
 async function test() {

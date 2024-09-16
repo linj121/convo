@@ -29,7 +29,7 @@ function parseCSVString() {
 
 dotenv.config();
 
-const _DEFAULT_DB_PATH: string = path.normalize(`${__dirname}/../../default.db`);
+const _DEFAULT_DB_PATH: string = path.normalize(`${__dirname}/../../prisma/default.db`);
 
 const configSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
@@ -39,6 +39,8 @@ const configSchema = z.object({
   OPENAI_TTS_VOICE: handleEmptyString(
     z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx")
   ),
+  ASSISTANT_PROMPT_DEFAULT: z.string(),
+  ASSISTANT_PROMPT_HABIT_TRACKER: z.string(),
   WECHATY_CHATBOT_NAME: parseCSVString(),
   WECHATY_GROUPCHAT_WHITELIST: parseCSVString(),
   WECHATY_CONTACT_WHITELIST: parseCSVString(),
@@ -63,6 +65,8 @@ function parseConfig(): Config {
     OPENAI_MODEL: process.env.OPENAI_MODEL,
     OPENAI_PROJECT_ID: process.env.OPENAI_PROJECT_ID,
     OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE,
+    ASSISTANT_PROMPT_DEFAULT: process.env.ASSISTANT_PROMPT_DEFAULT,
+    ASSISTANT_PROMPT_HABIT_TRACKER: process.env.ASSISTANT_PROMPT_HABIT_TRACKER,
     WECHATY_CHATBOT_NAME: process.env.WECHATY_CHATBOT_NAME,
     WECHATY_GROUPCHAT_WHITELIST: process.env.WECHATY_GROUPCHAT_WHITELIST,
     WECHATY_CONTACT_WHITELIST: process.env.WECHATY_CONTACT_WHITELIST,
@@ -81,5 +85,6 @@ function parseConfig(): Config {
 export { 
   config, 
   parseConfig,
+  Config,
   LOG_LEVEL
 };

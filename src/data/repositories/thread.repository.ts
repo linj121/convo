@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import type { thread } from "@prisma/client";
+import type { Thread } from "@prisma/client";
 import BaseRepository from "./base.repository";
 import { 
   DataRepositoryError,
@@ -11,7 +11,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 class ThreadRepository extends BaseRepository {
   private static thread = this.prismaClient.thread;
 
-  public static async upsert(params: Prisma.threadCreateInput) {
+  public static async upsert(params: Prisma.ThreadCreateInput) {
     try {
       const thread = await this.thread.upsert({
         create: {
@@ -37,7 +37,7 @@ class ThreadRepository extends BaseRepository {
   /**
    * @throws `DataRepositoryNotFoundError` if data not found
    */
-  public static async findOne(params: Prisma.threadFindUniqueOrThrowArgs) {
+  public static async findOne(params: Prisma.ThreadFindUniqueOrThrowArgs) {
     try {
       const thread = await this.thread.findUniqueOrThrow({
         where: params.where
@@ -57,7 +57,7 @@ class ThreadRepository extends BaseRepository {
   /**
    * @throws `DataRepositoryNotFoundError` if data not found
    */
-  public static async findOneByThreadOwner(threadOwner: thread["owner"]) {
+  public static async findOneByThreadOwner(threadOwner: Thread["owner"]) {
     return await this.findOne({
       where: {
         owner: threadOwner

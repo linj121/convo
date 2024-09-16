@@ -14,13 +14,13 @@
     "clean": "tsc --build --clean",
     "serve": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/index.js",
     "watch": "tsx watch src/index.ts",
-    "test": "mocha"
+    "test": "mocha",
+    "migrate": "prisma "
   },
   "author": "Josh Lin",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
     "@types/chai": "^4.3.17",
     "@types/mocha": "^10.0.7",
     "@types/qrcode": "^1.5.5",
@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@prisma/client": "5.19.1",
-    "better-sqlite3": "^11.1.2",
     "dotenv": "^16.4.5",
     "file-box": "^1.4.15",
     "openai": "^4.53.0",

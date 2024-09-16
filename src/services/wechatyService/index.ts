@@ -2,38 +2,45 @@ import logger from "@logger";
 import { ScanStatus, Wechaty, WechatyBuilder, WechatyOptions } from "wechaty";
 import type { WechatyEventListeners } from "wechaty/dist/esm/src/schemas/wechaty-events";
 import QRCode from "qrcode";
-import MessageProcessor from "./messageProcessor";
+import PluginRegistry from "./plugins/pluginRegistry";
+import registerPlugins from "./plugins/pluginRegistration";
 
-class AssistantService {
+class WechatyService {
   /**
    * The wechaty puppet service we would like to use for everything 
    */
-  service: Wechaty;
+  public service: Wechaty;
   /**
    * For testing: `lastError` can be accessed and thrown in test cases.
    * Added by onError handler
    */
-  lastError: Error | null = null;
+  public lastError: Error | null = null;
   /**
    * The timestamp in ms since midnight Jan 1, 1979 (UTC) 
    * when wechaty service is constructed and being initialized
    */
-  initializedAt: number;
-  /**
-   * message processor module used in onMessage handler
-   */
-  messageProcessor: MessageProcessor;
+  public initializedAt: number;
 
 
   constructor(options: WechatyOptions) {
     this.initializedAt = Date.now();
     this.service = WechatyBuilder.build(options);
-    this.messageProcessor = new MessageProcessor(this);
-    this.register();
+    registerPlugins();
+    this.setupListeners(this.service);
   }
 
-  private register() {
-    this.service
+  public async start(): Promise<void> {
+    logger.verbose("Attempting to start wechaty service ...");
+    await this.service.start();
+  }
+
+  public async stop(): Promise<void> {
+    logger.verbose("Attempting to stop wechaty service ...");
+    await this.service.stop();
+  }
+
+  private setupListeners(wechaty: Wechaty) {
+    wechaty
       .on("start", this.onStart)
       .on("stop", this.onStop)
       .on("scan", this.onScan)
@@ -76,7 +83,12 @@ class AssistantService {
 
   private onMessage: WechatyEventListeners["message"] = async (message) => {
     try {
-      await this.messageProcessor.process(message);
+      // Filter out all messages before WechatyService is initialized
+      if (message.date().getTime() < this.initializedAt) return;
+
+      logger.info(`on(message) ${message.toString()}`);
+
+      await PluginRegistry.getInstance().dispatchPlugins(message);
     } catch (error) {
       logger.error(error);      
     }
@@ -88,4 +100,4 @@ class AssistantService {
   };
 }
 
-export default AssistantService;
+export default WechatyService;

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import type { assistant } from "@prisma/client";
+import type { Assistant } from "@prisma/client";
 import BaseRepository from "./base.repository";
 import { 
   DataRepositoryError,
@@ -11,7 +11,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 class AssistantRepository extends BaseRepository {
   private static assistant = this.prismaClient.assistant;
 
-  public static async upsert(params: Prisma.assistantCreateInput) {
+  public static async upsert(params: Prisma.AssistantCreateInput) {
     try {
       const assistant = await this.assistant.upsert({
         create: {
@@ -37,7 +37,7 @@ class AssistantRepository extends BaseRepository {
   /**
    * @throws `DataRepositoryNotFoundError` if data not found
    */
-  public static async findOne(params: Prisma.assistantFindUniqueOrThrowArgs): Promise<assistant> {
+  public static async findOne(params: Prisma.AssistantFindUniqueOrThrowArgs): Promise<Assistant> {
     try {
       const assistant = await this.assistant.findUniqueOrThrow({
         where: params.where
@@ -57,7 +57,7 @@ class AssistantRepository extends BaseRepository {
   /**
    * @throws `DataRepositoryNotFoundError` if data not found
    */
-  public static async findOneByAssistantName(assistantName: assistant["name"]) {
+  public static async findOneByAssistantName(assistantName: Assistant["name"]) {
     return await this.findOne({
       where: {
         name: assistantName

@@ -8,14 +8,16 @@
     "test": "test"
   },
   "scripts": {
-    "start": "npm run clean && npm run build && npm run serve",
+    "start": "npm run migrate:prod && npm run generate && npm run clean && npm run build && npm run serve",
     "build": "tsc --build --verbose --pretty",
     "build:debug": "tsc --build --verbose --pretty --sourceMap",
     "clean": "tsc --build --clean",
     "serve": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/index.js",
     "watch": "tsx watch src/index.ts",
     "test": "mocha",
-    "migrate": "prisma "
+    "migrate:prod": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
+    "generate": "prisma generate"
   },
   "author": "Josh Lin",
   "license": "ISC",

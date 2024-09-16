@@ -4,9 +4,9 @@ import { sleep } from "@utils/functions";
 async function main() {
   await init();
   const { default: logger } = await import("@logger");
-  const { default: AssistantService } = await import("@services/assistant");
+  const { default: WechatySerivce } = await import("@services/wechatyService");
   
-  const assistant = new AssistantService({
+  const wechatyService = new WechatySerivce({
     name: "im-assistant",
     puppet: "wechaty-puppet-wechat",
     puppetOptions: {
@@ -14,20 +14,15 @@ async function main() {
     },
   });
 
-  const app = assistant.service;
-
-  const gracefulShutdownHandler: NodeJS.SignalsListener = async (signal) => {
-    logger.info(`Received ${signal.toString()}, gracefully shutting down`);
-    await app.stop();
+  process.on("beforeExit", async (code: number) => {
+    logger.info(`Getting code ${code}, about to exit, now performing clean ups ...`);
+    await wechatyService.stop();
     await sleep(3);
     process.exit(0);
-  }
-  process.on("SIGINT", gracefulShutdownHandler);
-  process.on("SIGQUIT", gracefulShutdownHandler);
-  process.on("SIGTERM", gracefulShutdownHandler);
+  });
 
   try {
-    await app.start();
+    await wechatyService.start();
   } catch (error) {
     logger.error(`Wechaty app failed to start ${error}`);
   }

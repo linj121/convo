@@ -1,19 +1,18 @@
 import { parseConfig } from "@config";
 import logger from "@logger";
 import DatabaseSetup from "@data";
-import assitantServiceInit from "@services/assistant/init";
+import OpenAIClients from "@libs/openai/clients";
 
 
 async function init(): Promise<void> {
   try {
     const config = parseConfig();
     logger.info("Configuration parsed and loaded successfully");
-    logger.debug("Loaded configuration -> " + JSON.stringify(config));
+    logger.debug("Loaded configuration:\n" + JSON.stringify(config));
 
     await DatabaseSetup.initialize();
-    logger.info("Database initialized successfully");
 
-    await assitantServiceInit();
+    await OpenAIClients.initialize();
 
   } catch (error) {
     logger.error(`Got the following error when initializing, now quiting: ${error}`);

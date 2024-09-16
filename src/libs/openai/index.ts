@@ -1,11 +1,12 @@
 import { config } from "@config";
 import logger from "@logger";
-import OpenAI, { NotFoundError } from "openai";
+import OpenAI, { NotFoundError, toFile } from "openai";
 import { MessageInterface } from "wechaty/impls";
 import { TranscriptionCreateParams } from "openai/resources/audio/transcriptions";
 import { AssistantRepository, ThreadRepository } from "@data/repositories";
-import type { assistant } from "@prisma/client";
+import type { Assistant } from "@prisma/client";
 import { DataRepositoryNotFoundError } from "@utils/errors";
+import { FileBox, FileBoxInterface } from "file-box";
 
 type ThreadOwner = string;
 
@@ -25,18 +26,12 @@ class OpenAIClient {
   public assistant?: OpenAI.Beta.Assistants.Assistant;
   public assistant_name?: AssistantEnum;
   public static openai: OpenAI;
-  public static SpeechParamsDefaults: Required<Pick<SpeechParams, "model" | "voice">>;
 
   private constructor() {
     OpenAIClient.openai = new OpenAI({
       apiKey: config.OPENAI_API_KEY,
       project: config.OPENAI_PROJECT_ID || undefined
     });
-    OpenAIClient.SpeechParamsDefaults = {
-      model: "tts-1",
-      // Use tts-1 instead of tts-1-hd because it's more affordable and faster in response
-      voice: config.OPENAI_TTS_VOICE
-    };
   }
 
   static async init(
@@ -50,7 +45,7 @@ class OpenAIClient {
     return client;
   }
 
-  public static async getThreadOwner(ctx: MessageInterface): Promise<string> {
+  public static async getThreadOwner(ctx: MessageInterface): Promise<ThreadOwner> {
     if (ctx.room()) return await ctx.room()!.topic();
 
     if (ctx.self()) return ctx.listener()!.name();
@@ -64,7 +59,6 @@ class OpenAIClient {
   ): Promise<OpenAI.Beta.Assistants.Assistant> {
     try {
       const created_assistant = await OpenAIClient.openai.beta.assistants.create(assistantCreateOption);
-      // TODO: Mark, AssistantRepository
       await AssistantRepository.upsert({
         assistant_id: created_assistant.id,
         name: assistantName
@@ -79,8 +73,7 @@ class OpenAIClient {
     assistantName: AssistantEnum, 
     assistantCreateOption: OpenAI.Beta.Assistants.AssistantCreateParams
   ) {
-    // TODO: Mark, AssistantRepository
-    let assistant_cache: assistant | undefined;
+    let assistant_cache: Assistant | undefined;
     let final_assistant: OpenAI.Beta.Assistants.Assistant | undefined;
 
     try {
@@ -113,7 +106,6 @@ class OpenAIClient {
   private async createAndInsertThread(threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread> {
     try {
       const created_thread = await OpenAIClient.openai.beta.threads.create();
-      // TODO: Mark, ThreadRepository.upsert
       await ThreadRepository.upsert({
         owner: threadOwner,
         thread_id: created_thread.id
@@ -125,7 +117,6 @@ class OpenAIClient {
   }
 
   private async getThreadID(threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread["id"]> {
-    // TODO: Mark, ThreadRepository.findOneByThreadOwner
     try {
       const thread = await ThreadRepository.findOneByThreadOwner(threadOwner);
       return thread.thread_id;
@@ -145,7 +136,7 @@ class OpenAIClient {
    * @param message Plain text message to be sent
    * @param threadOwner thread owner in wechat (contact or group chat topic)
    */
-  async createMessage(message: string, threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread["id"]> {
+  public async createMessage(message: string, threadOwner: ThreadOwner): Promise<OpenAI.Beta.Threads.Thread["id"]> {
     // if (!this.threads || !this.threads!.hasOwnProperty(threadOwner)) {
     //   await this.createThread(threadOwner);
     // }
@@ -185,7 +176,7 @@ class OpenAIClient {
    * @param threadID Optional. Supply this arg to avoid calling OpenAI API
    * @returns aisstant response in plain text
    */
-  async getResponse(threadOwner: ThreadOwner, threadID?: OpenAI.Beta.Threads.Thread["id"]): Promise<string|undefined> {
+  public async getResponse(threadOwner: ThreadOwner, threadID?: OpenAI.Beta.Threads.Thread["id"]): Promise<string|undefined> {
     if (!this.assistant) {
       throw new Error("Assistant has not been initialized. Create assistant before anything else");
     }
@@ -267,9 +258,23 @@ class OpenAIClient {
    * @returns A buffer containing the speech audio content
    */
   public static async textToSpeech(speechParams: SpeechParams): Promise<Buffer> {
-    const params = {...speechParams, ...OpenAIClient.SpeechParamsDefaults};
-    const response = await OpenAIClient.openai.audio.speech.create(params);
+    // Setting default values
+    if (!speechParams["model"]) speechParams["model"] = "tts-1";
+    if (!speechParams["voice"]) speechParams["voice"] = config.OPENAI_TTS_VOICE;
+
+    const response = await OpenAIClient.openai.audio.speech.create(
+      speechParams as OpenAI.Audio.Speech.SpeechCreateParams
+    );
     return Buffer.from(await response.arrayBuffer());
+  }
+
+  public static async textToSpeechFileBox(inputText: string, filename: string): Promise<FileBox> {
+    try {
+      const audioBuffer = await OpenAIClient.textToSpeech({ input: inputText });
+      return FileBox.fromBuffer(audioBuffer, filename);
+    } catch (error) {
+      throw new Error("Failed to convert input text to speech file box", { cause: error });    
+    }
   }
 
   /**
@@ -288,15 +293,39 @@ class OpenAIClient {
     return transcription.text;
   }
 
+  public static async speechFileBoxToText(speechFileBox: FileBox | FileBoxInterface): Promise<string> {
+    try {
+      const buffer = await speechFileBox.toBuffer();
+      // https://community.openai.com/t/creating-readstream-from-audio-buffer-for-whisper-api/534380/3
+      const compatibleBuffer = await toFile(buffer, "audio.mp3");
+      return await OpenAIClient.speechToText(compatibleBuffer);
+    } catch (error) {
+      throw new Error("Failed to convert speech file box to text", { cause: error });    
+    }
+  }
+
   public async submitAndGetResponseFromAssistant(
-    message: string,
+    userMessage: string,
     threadOwner: ThreadOwner,
   ): Promise<string> {
-    const threadID = await this.createMessage(message, threadOwner);
+    const threadID = await this.createMessage(userMessage, threadOwner);
     // Optimize response time by supplying threadID to this.getResponse 
     const response = await this.getResponse(threadOwner, threadID);
     if (!response) throw new Error(`Failed to get response from ${threadOwner} w/ id ${threadID}`);
     return response;
+  }
+
+  /**
+   * Get llm response from a user message.
+   * A message context is required for determining the thread owner.
+   * This is a wrapper around submitAndGetResponseFromAssistant(2).
+   */
+  public async generateResponse(
+    userMessage: string,
+    ctx: MessageInterface
+  ): Promise<string> {
+    const threadOwner = await OpenAIClient.getThreadOwner(ctx);
+    return await this.submitAndGetResponseFromAssistant(userMessage, threadOwner);
   }
 
 }

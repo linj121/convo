@@ -7,16 +7,18 @@ datasource db {
   url      = "file:./default.db"
 }
 
-model assistant {
-  id           Int    @id @default(autoincrement())
-  name         String @unique(map: "sqlite_autoindex_assistant_1")
+model Assistant {
+  id           Int      @id @default(autoincrement())
+  name         String   @unique
   assistant_id String
-  created_at   String @default("CURRENT_TIMESTAMP")
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 }
 
-model thread {
-  id         Int    @id @default(autoincrement())
-  owner      String @unique(map: "sqlite_autoindex_thread_1")
+model Thread {
+  id         Int      @id @default(autoincrement())
+  owner      String   @unique
   thread_id  String
-  created_at String @default("CURRENT_TIMESTAMP")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }

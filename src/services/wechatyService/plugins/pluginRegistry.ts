@@ -136,6 +136,7 @@ class PluginRegistry {
       pluginValidator = pluginValidator.bind(plugin);
 
       if (await pluginValidator(message)) {
+        logger.debug(`Dispatching plugin: ${plugin.pluginName}`);
         try {
           await plugin.pluginHandler(message);
         } catch (error) {

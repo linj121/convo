@@ -41,7 +41,7 @@ const configSchema = z.object({
   ),
   ASSISTANT_PROMPT_DEFAULT: z.string(),
   ASSISTANT_PROMPT_HABIT_TRACKER: z.string(),
-  WECHATY_CHATBOT_NAME: parseCSVString(),
+  WECHATY_CHATBOT_NAME: handleEmptyString(parseCSVString().default("jarvis")),
   WECHATY_GROUPCHAT_WHITELIST: parseCSVString(),
   WECHATY_CONTACT_WHITELIST: parseCSVString(),
   DATABASE_URL: handleEmptyString(z.string().default(_DEFAULT_DB_PATH)),

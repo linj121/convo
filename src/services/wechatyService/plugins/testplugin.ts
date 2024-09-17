@@ -18,8 +18,8 @@ class TestPlugin extends PluginBase {
     super();
     this.validators = new Map([
       [MessageType.Text, this.validator],
-      [MessageType.Image, () => true],
-      [MessageType.Attachment, () => true],
+      [MessageType.Image, () => false],
+      [MessageType.Attachment, () => false],
     ]);
   }
 

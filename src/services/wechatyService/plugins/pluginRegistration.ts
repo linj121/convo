@@ -1,6 +1,7 @@
 import PluginBase from "./pluginBase";
 import ChatBot from "./chatbot";
 import HabitTracker from "./habitTracker";
+import HolidayBot from "./holidaybot";
 import TestPlugin from "./testplugin";
 
 // Order matters!
@@ -9,6 +10,7 @@ import TestPlugin from "./testplugin";
 const _pluginsToBeRegistered: Array<Constructor<PluginBase>> = [
   ChatBot,
   HabitTracker,
+  HolidayBot,
   TestPlugin,
 ];
 

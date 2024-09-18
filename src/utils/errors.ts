@@ -28,10 +28,26 @@ class InvalidPluginInput extends Error {
   }
 }
 
+class InvalidCommandLineArgument extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "InvalidCommandLineArgument";
+  }
+}
+
+class UnauthorizedError extends Error {
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "UnauthorizedError";
+  }
+}
+
 export {
   NotTriggeredError,
   DataRepositoryError,
   DataRepositoryNotFoundError,
   NotImplementedError,
-  InvalidPluginInput
+  InvalidPluginInput,
+  InvalidCommandLineArgument,
+  UnauthorizedError,
 }

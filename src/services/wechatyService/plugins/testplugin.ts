@@ -6,9 +6,9 @@ import { respond } from "@utils/wechatyUtils";
 
 
 class TestPlugin extends PluginBase {
-  public pluginName: string = "test plugin";
+  public pluginName: string = "Test Plugin";
   public pluginVersion: string = "v0.0.1";
-  public pluginDescription: string = "A test plugin";
+  public pluginDescription: string = "A test plugin. Send /test to test it.";
 
   public validators: Map<MessageType, (message: MessageInterface) => (Promise<boolean> | boolean)>;
 

@@ -1,5 +1,6 @@
 /**
- *
+ * NOTE: this function only guarantees the control will yield 
+ * back to the caller at least after ms milliseconds
  * @param ms number of milliseconds to sleep
  * @returns A promise that resolves after ms milliseconds
  */
@@ -26,7 +27,40 @@ function deletePartofString(str: string, start: number, end: number): string {
   return str.slice(0, start) + str.slice(end);
 }
 
-export { 
+type ArgPair = {
+  flag: string, 
+  value: string
+};
+type ArgV = Array<Partial<ArgPair>>;
+
+const _commandLineParserRegExp =
+  new RegExp(' *(?:-+([^= \\\'\\"]+)(?:=| +)?)?(?:([\\\'\\"])([^\\2]+?)\\2|([^- \\"\\\']+))?', 'gm');
+/**
+ * Parse command line arguments from a raw string
+ * https://regexlib.com/REDetails.aspx?regexp_id=13053
+ * @param command command in raw string
+ * @returns An array of {flag, value} pair 
+ */
+function commandLineParser(command: string): ArgV {
+  const matches = command.matchAll(_commandLineParserRegExp);
+  const argV: ArgV = [];
+  for (const match of matches) {
+    const wholeMatch = match[0];
+    if (!wholeMatch || wholeMatch === "") continue;
+    const flag = match[1] as string | undefined;
+    const quote = match[2] as string | undefined;
+    const quotedContent = match[3] as string | undefined;
+    const unquotedContent = match[4] as string | undefined;
+    argV.push({
+      flag: flag,
+      value: quote ? quotedContent : unquotedContent
+    });
+  }
+  return argV;
+}
+
+export {
   sleep,
-  deletePartofString
+  deletePartofString,
+  commandLineParser,
 };

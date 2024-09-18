@@ -16,9 +16,9 @@ type HabitTrackerCommandStruct = {
 }
 
 class HabitTracker extends PluginBase {
-  public pluginName: string = "habit tracker";
+  public pluginName: string = "Habit Tracker";
   public pluginVersion: string = "v0.0.1";
-  public pluginDescription: string = "A command to take notes and get encouragement";
+  public pluginDescription: string = "A habit tracking bot that always cheers you up! Send /habit -h for more info.";
 
   public validators: Map<MessageType, (message: Message) => (Promise<boolean> | boolean)>;
 
@@ -34,9 +34,7 @@ Options:
 -t str  set timezone (Asia/Shanghai, ...)
 -n str  notes, enclosed by double quotes "
 -h      display help message
--v      get current version
-
-For more help on how to use this, head to https://aaa.bbb.ccc`;
+-v      get current version`;
   private readonly DEFAULT_TIMEZONE = "America/Toronto";
   private readonly DEFAULT_TIMEZONE_ZH = "Asia/Shanghai";
 

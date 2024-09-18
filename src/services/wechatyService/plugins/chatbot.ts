@@ -10,9 +10,11 @@ import { InvalidPluginInput } from "@utils/errors";
 import { respond } from "@utils/wechatyUtils";
 
 class ChatBot extends PluginBase {
-  public pluginName: string = "chatbot"
+  public pluginName: string = "Chat Bot"
   public pluginVersion: string = "v0.1.0";
-  public pluginDescription: string = "An intelligent conversational chat bot";
+  public pluginDescription: string = 
+    "An intelligent conversational chat bot. " +
+    `Send @ + one of the following: (${config.WECHATY_CHATBOT_NAME.join(",")}) + your message to talk to the bot! Support both text and audio messages.`;
 
   public validators: Map<MessageType, (message: Message) => (Promise<boolean> | boolean)>;
 

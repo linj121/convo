@@ -59,7 +59,7 @@ class DatabaseSetup {
       logger.warn(logEventTemplate(e));
     });
     this.prismaClient.$on("error", (e: Prisma.LogEvent) => {
-      logger.error(logEventTemplate(e));
+      logger.warn("[ERROR] " + logEventTemplate(e));
     });
   }
 }

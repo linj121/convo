@@ -1,0 +1,11 @@
+node_modules
+.devcontainer
+.github
+.vscode
+.git
+.gitignore
+.gitattributes
+.mocharc.json
+.nvmrc
+*.md
+dist

@@ -20,6 +20,9 @@ importers:
       openai:
         specifier: ^4.53.0
         version: 4.53.0
+      prisma:
+        specifier: ^5.19.1
+        version: 5.19.1
       qrcode:
         specifier: ^1.5.3
         version: 1.5.3
@@ -54,9 +57,6 @@ importers:
       mocha:
         specifier: ^10.7.3
         version: 10.7.3
-      prisma:
-        specifier: ^5.19.1
-        version: 5.19.1
       tsx:
         specifier: ^4.16.2
         version: 4.16.2

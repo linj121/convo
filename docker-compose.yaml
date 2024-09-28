@@ -1,0 +1,12 @@
+services:
+    convo:
+        image: satayking/convo:latest
+        container_name: convo
+        env_file:
+            - .env
+        volumes:
+            - convo_data:/app/prisma
+
+volumes:
+    convo_data:
+

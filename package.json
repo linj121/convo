@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "npm run clean && npm run build && npm run serve",
+    "start:prod": "npm run migrate:prod && npm run serve",
     "build": "tsc --build --verbose --pretty",
     "build:debug": "tsc --build --verbose --pretty --sourceMap",
     "clean": "tsc --build --clean",
@@ -28,11 +29,11 @@
     "@types/qrcode": "^1.5.5",
     "chai": "^5.1.1",
     "mocha": "^10.7.3",
-    "prisma": "^5.19.1",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"
   },
   "dependencies": {
+    "prisma": "^5.19.1",
     "@prisma/client": "5.19.1",
     "dotenv": "^16.4.5",
     "file-box": "^1.4.15",

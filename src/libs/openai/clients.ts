@@ -1,8 +1,9 @@
 import { config } from "@config";
 import OpenAIClient, { AssistantEnum } from "@libs/openai";
+import { assistantPrompts } from "@utils/constants";
 
 class OpenAIClients {
-  public static assistantPrompts: Record<AssistantEnum, string | null>;
+  public static assistantPrompts: Record<AssistantEnum, string>;
 
   public static openAIClients: Partial<Record<keyof typeof this.assistantPrompts, OpenAIClient>> = {};
 
@@ -10,9 +11,10 @@ class OpenAIClients {
    * Initialize openai clients with their corresponding instruction/prompt
    */
   public static async initialize(): Promise<void> {
+    // Overwrite prompts if provided by config 
     OpenAIClients.assistantPrompts = {
-      [AssistantEnum.DEFAULT]: config.ASSISTANT_PROMPT_DEFAULT,
-      [AssistantEnum.HABIT_TRACKER]: config.ASSISTANT_PROMPT_HABIT_TRACKER
+      [AssistantEnum.DEFAULT]: config.ASSISTANT_PROMPT_DEFAULT || assistantPrompts[AssistantEnum.DEFAULT],
+      [AssistantEnum.HABIT_TRACKER]: config.ASSISTANT_PROMPT_HABIT_TRACKER || assistantPrompts[AssistantEnum.HABIT_TRACKER],
     };
 
     for (const key of Object.keys(this.assistantPrompts) as Array<keyof typeof this.assistantPrompts>) {

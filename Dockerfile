@@ -21,7 +21,7 @@ FROM base AS prod-deps
  
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml .
+COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm fetch --frozen-lockfile
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile --prod
 
@@ -34,14 +34,17 @@ FROM base AS build
  
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml .
+COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm fetch --frozen-lockfile
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
+
 # Copy all neccessary source codes
-COPY . .
-# Generate prisma client for building
-RUN pnpm generate
-RUN pnpm build
+COPY src ./src
+COPY tsconfig.json ./
+# Used for generating prisma client
+COPY prisma ./prisma
+
+RUN pnpm generate && pnpm build
 
 # Stage 4: Copy the built result and the dependencies to the final image
 FROM base
@@ -49,13 +52,15 @@ FROM base
 WORKDIR /app
 
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
 COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/dist ./dist
+# tsconfig.json is required for additional module path resolution
 COPY --from=build /app/tsconfig.json ./tsconfig.json
-COPY --from=build /app/assets ./assets
 COPY --from=build /app/prisma ./prisma
+COPY assets ./assets
 
 ENV NODE_ENV=production
 # EXPOSE 8080/tcp
 
-CMD ["pnpm", "start:prod"]
+RUN pnpm migrate:prod
+CMD ["pnpm", "serve"]

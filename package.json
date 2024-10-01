@@ -5,15 +5,18 @@
   "packageManager": "pnpm@9.11.0",
   "directories": {
     "doc": "docs",
-    "test": "test"
+    "test": "tests"
+  },
+  "prisma": {
+    "schema": "src/data/prisma/schema.prisma"
   },
   "scripts": {
-    "start": "npm run clean && npm run build && npm run serve",
-    "build": "tsc --build --verbose --pretty",
-    "build:debug": "tsc --build --verbose --pretty --sourceMap",
+    "start": "npm run serve",
+    "build": "npm run generate && tsc --build --verbose --pretty && tsc-alias -v",
+    "build:debug": "npm run generate && tsc --build --verbose --pretty --sourceMap && tsc-alias -v",
     "clean": "tsc --build --clean",
-    "serve": "TS_NODE_BASEURL=./dist node -r tsconfig-paths/register dist/index.js",
-    "watch": "tsx watch src/index.ts",
+    "serve": "node build/index.js",
+    "watch": "tsx watch sr/index.ts",
     "test": "mocha",
     "migrate:prod": "prisma migrate deploy",
     "migrate:dev": "prisma migrate dev",
@@ -28,17 +31,17 @@
     "@types/qrcode": "^1.5.5",
     "chai": "^5.1.1",
     "mocha": "^10.7.3",
+    "tsc-alias": "^1.8.10",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "prisma": "^5.19.1",
-    "@prisma/client": "5.19.1",
+    "@prisma/client": "5.20.0",
     "dotenv": "^16.4.5",
     "file-box": "^1.4.15",
     "openai": "^4.53.0",
+    "prisma": "^5.20.0",
     "qrcode": "^1.5.3",
-    "tsconfig-paths": "^4.2.0",
     "wechaty": "^1.20.2",
     "wechaty-puppet-wechat": "^1.18.4",
     "winston": "^3.13.0",

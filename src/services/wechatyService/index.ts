@@ -30,12 +30,12 @@ class WechatyService {
   }
 
   public async start(): Promise<void> {
-    logger.verbose("Attempting to start wechaty service ...");
+    logger.info("Starting wechaty service ...");
     await this.service.start();
   }
 
   public async stop(): Promise<void> {
-    logger.verbose("Attempting to stop wechaty service ...");
+    logger.info("Stopping wechaty service ...");
     await this.service.stop();
   }
 

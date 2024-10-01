@@ -7,5 +7,14 @@ node_modules
 .gitattributes
 .mocharc.json
 .nvmrc
+.pmpm-store
+.env*
 *.md
+*.memory-card.json
+Makefile
+scripts
+docs
+tests
+localdb
+build
 dist

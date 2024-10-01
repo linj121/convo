@@ -5,8 +5,7 @@ services:
         env_file:
             - .env
         volumes:
-            - convo_data:/app/prisma
+            - convo_data:/app/localdb
 
 volumes:
     convo_data:
-

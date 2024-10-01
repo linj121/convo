@@ -1,6 +1,6 @@
 import { createLogger, format, transports } from "winston";
 import type { LoggerOptions } from "winston";
-import { LOG_LEVEL } from "@config";
+import { config } from "@config";
 
 const { combine, timestamp, printf, colorize } = format;
 
@@ -13,7 +13,7 @@ const customFormat = printf(({ level, message, timestamp }) => {
 
 // More on logging levels: https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
 const options: LoggerOptions = {
-  level: LOG_LEVEL,
+  level: config.LOG_LEVEL,
   format: combine(timestamp(), colorize(), customFormat),
   transports: [new transports.Console()],
 };

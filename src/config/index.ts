@@ -4,7 +4,7 @@ import path from "node:path";
 
 /**
  * Empty string need to be converted to `undefined` before being sent to zod,
- * to ensure `.default()` is working as expected!
+ * to ensure `string().default(...)` is working as expected!
  * @param rule A chain of zod rules: `z.strin().min(10)...`
  * @returns A function that that takes the rule and return a regular constraint
  */
@@ -29,31 +29,36 @@ function parseCSVString() {
 
 dotenv.config();
 
-const _DEFAULT_DB_PATH: string = path.normalize(`${__dirname}/../../prisma/default.db`);
-
 const configSchema = z.object({
-  OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
-  OPENAI_MODEL: handleEmptyString(z.string().default("gpt-4o-mini")),
-  OPENAI_PROJECT_ID: handleEmptyString(z.string().default("")),
-   // https://platform.openai.com/docs/guides/text-to-speech/quickstart
-  OPENAI_TTS_VOICE: handleEmptyString(
-    z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx")
-  ),
-  ASSISTANT_PROMPT_DEFAULT: z.string(),
-  ASSISTANT_PROMPT_HABIT_TRACKER: z.string(),
-  WECHATY_CHATBOT_NAME: handleEmptyString(parseCSVString().default("jarvis")),
-  WECHATY_GROUPCHAT_WHITELIST: parseCSVString(),
-  WECHATY_CONTACT_WHITELIST: parseCSVString(),
-  DATABASE_URL: handleEmptyString(z.string().default(_DEFAULT_DB_PATH)),
-  // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
-  LOG_LEVEL: z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"]),
+  OPENAI_API_KEY: 
+    z.string().min(1, "OPENAI_API_KEY is required"),
+  OPENAI_MODEL: 
+    handleEmptyString(z.string().default("gpt-4o-mini")),
+  OPENAI_PROJECT_ID: 
+    handleEmptyString(z.string().default("")),
+  OPENAI_TTS_VOICE: // https://platform.openai.com/docs/guides/text-to-speech/quickstart
+    handleEmptyString(z.enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']).default("onyx")),
+  ASSISTANT_PROMPT_DEFAULT: 
+    z.string(),
+  ASSISTANT_PROMPT_HABIT_TRACKER: 
+    z.string(),
+  WECHATY_CHATBOT_NAME: 
+    handleEmptyString(parseCSVString().default("jarvis")),
+  WECHATY_GROUPCHAT_WHITELIST: 
+    parseCSVString(),
+  WECHATY_CONTACT_WHITELIST: 
+    parseCSVString(),
+  DATABASE_URL: 
+    handleEmptyString(z.string().default(path.normalize(`${__dirname}/../../localdb/default.db`))),
+  LOG_LEVEL: // https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels
+    handleEmptyString(
+      z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"])
+       .default(process.env.NODE_ENV === "production" ? "info" : "debug")
+    ),
 });
 
 type Config = z.infer<typeof configSchema>;
-
 let config: Config;
-
-const LOG_LEVEL = process.env.LOG_LEVEL || (process.env.NODE_ENV === "production" ? "info" : "debug");
 
 /**
  * Call before accessing configuration
@@ -71,7 +76,7 @@ function parseConfig(): Config {
     WECHATY_GROUPCHAT_WHITELIST: process.env.WECHATY_GROUPCHAT_WHITELIST,
     WECHATY_CONTACT_WHITELIST: process.env.WECHATY_CONTACT_WHITELIST,
     DATABASE_URL: process.env.DATABASE_URL,
-    LOG_LEVEL: LOG_LEVEL,
+    LOG_LEVEL: process.env.LOG_LEVEL,
   });
 
   if (!parsedConfig.success) {
@@ -83,8 +88,7 @@ function parseConfig(): Config {
 };
 
 export { 
-  config, 
-  parseConfig,
   Config,
-  LOG_LEVEL
+  config, 
+  parseConfig
 };

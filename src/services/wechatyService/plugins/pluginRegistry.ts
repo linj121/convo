@@ -39,10 +39,10 @@ class PluginRegistry {
 `Plugin Manager
 • Usage: /plugin [OPTION]
 • Option:
---list    | -l   list all plugins
---enable  | -e  <plugin number> enable a plugin
---disable | -d  <plugin number> disable a plugin
---help    | -h   display help message
+-l | --list     list all plugins
+-e | --enable  [N] enable plugin number N
+-d | --disable [N] disable plugin number N
+-h | --help     display help message
 • Example:
 /plugin --list
 /plugin --disable 2

@@ -13,8 +13,10 @@ class ChatBot extends PluginBase {
   public pluginName: string = "Chat Bot"
   public pluginVersion: string = "v0.1.0";
   public pluginDescription: string = 
-    "An intelligent conversational chat bot. " +
-    `Send @ + one of the following: (${config.WECHATY_CHATBOT_NAME.join(",")}) + your message to talk to the bot! Support both text and audio messages.`;
+	  "An intelligent chat bot supporting text and audio messages. " +
+    "To interact, @ one of the following names: " +
+	  `(${config.WECHATY_CHATBOT_NAME.join(",")}), followed by your message. ` +
+    `For example, "@${config.WECHATY_CHATBOT_NAME[0]} tell me a joke"`;
 
   public validators: Map<MessageType, (message: Message) => (Promise<boolean> | boolean)>;
 
@@ -129,7 +131,8 @@ class ChatBot extends PluginBase {
     
     // TTS audio response
     let audioResponse: FileBox | undefined;
-    if (this.audioResponseEnabled) audioResponse = await OpenAIClient.textToSpeechFileBox(llmResponse, "response.mp3");
+    if (this.audioResponseEnabled)
+      audioResponse = await OpenAIClient.textToSpeechFileBox(llmResponse, "response.mp3");
     
     return [textResponse, audioResponse];
   }

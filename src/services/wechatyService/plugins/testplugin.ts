@@ -8,11 +8,11 @@ import { respond } from "@utils/wechatyUtils";
 class TestPlugin extends PluginBase {
   public pluginName: string = "Test Plugin";
   public pluginVersion: string = "v0.0.1";
-  public pluginDescription: string = "A test plugin. Send /test to test it.";
+  public pluginDescription: string = "A test plugin. Send /ping to test it.";
 
   public validators: Map<MessageType, (message: MessageInterface) => (Promise<boolean> | boolean)>;
 
-  private readonly textValidatorRegex = new RegExp("^ */test", "i");
+  private readonly textValidatorRegex = new RegExp("^ */ping", "i");
 
   constructor() {
     super();
@@ -32,10 +32,10 @@ class TestPlugin extends PluginBase {
 
     switch (message.type()) {
       case MessageType.Text:
-        respond(message, "妈妈生的");
+        respond(message, "pong!");
         break;
       case MessageType.Image:
-        respond(message, "爸爸生的");
+        respond(message, "Got an image");
         break;
       case MessageType.Attachment:
         throw new Error("Testing error hanlding for test plugin");

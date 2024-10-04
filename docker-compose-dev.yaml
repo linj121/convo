@@ -1,0 +1,12 @@
+services:
+    convo:
+        image: convo:devbuild
+        build:
+            context: .
+        env_file:
+            - .env
+        volumes:
+            - convo_data:/app/localdb
+
+volumes:
+    convo_data:

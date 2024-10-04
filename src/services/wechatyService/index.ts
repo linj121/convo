@@ -67,7 +67,7 @@ class WechatyService {
       logger.info(`on(scan) ${ScanStatus[status]}, ${status}, ${qrcodeUrl}`);
 
       const consoleQRCode = await QRCode.toString(qrcode, { type: "terminal", small: true });
-      logger.info(`Scan QRCode to login:\n${consoleQRCode}`);
+      logger.info(`Scan QRCode to log in:\n${consoleQRCode}`);
     } else {
       logger.info(`on(scan) ${ScanStatus[status]}, ${status}`);
     }

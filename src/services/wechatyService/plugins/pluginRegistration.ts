@@ -1,3 +1,4 @@
+import PluginRegistry from "./pluginRegistry";
 import PluginBase from "./pluginBase";
 import ChatBot from "./chatbot";
 import HabitTracker from "./habitTracker";
@@ -17,7 +18,7 @@ const _pluginsToBeRegistered: Array<Constructor<PluginBase>> = [
 function registerPlugins(): void {
   _pluginsToBeRegistered.forEach(Plugin => {
     const plugin = new Plugin();
-    plugin.addSelfToRegistry();
+    PluginRegistry.getInstance().register(plugin);
   });
 }
 

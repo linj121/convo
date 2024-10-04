@@ -10,14 +10,14 @@ install:
 build:
 	pnpm build
 
-.PHONY: docker
-docker:
-	sudo docker build --progress=plain -t convo:testbuild .
-
 .PHONY: fixdeps
 fixdeps:
 	chmod +x scripts/install_chrome_deps.sh
 	sudo ./scripts/install_chrome_deps.sh
+
+.PHONY: image
+image:
+	sudo docker build -t convo:devbuild .
 
 .PHONY: clean
 clean:

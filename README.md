@@ -11,7 +11,7 @@
     <img src="docs/logo.png" alt="Logo" width="80" height="80">
   </a> -->
 
-  <h3 align="center" style="font-size:50px;">Convo</h3>
+  <h1 align="center">Convo</h1>
 
   <p align="center">
     An extension to instant messaging apps
@@ -259,7 +259,7 @@ For **end-users**, [deploy using prebuilt image](#deploy-a-prebuilt-image) is hi
 | `WECHATY_GROUPCHAT_WHITELIST`     | Optional, but **recommended**      | `[""]`                                          | Names of group chats to be whitelisted for chatbot, separated by commas `,`. By default, chatbot is disabled for all group chats. Enable the chatbot by providing names of target group chats. eg. `ecorp, family, fsociety` |
 | `WECHATY_CONTACT_WHITELIST`       | Optional, but **recommended**      | `[""]`                                          | Names of contacts to be whitelisted for chatbot, separated by commas `,`. By default, chatbot is disabled for all contacts. Enable the chatbot by providing **names (NOT alias)** of target contacts. eg. `mr.robot, elliot, white rose` |
 | `LOG_LEVEL`                       | Optional                           | `info` if in production mode, `debug` otherwise | error, warn, info, http, verbose, debug, silly [Doc](https://github.com/winstonjs/winston?tab=readme-ov-file#logging-levels)           |
-| `DATABASE_URL`                    | Optional                           | `project_root/localdb/default.db`               | Location of Sqlite3 DB file. WARNING: Use this only if you know what you're doing!                     |
+| `DATABASE_URL`                    | Optional                           | `./localdb/default.db`                          | Location of Sqlite3 DB file. WARNING: Use this only if you know what you're doing!                     |
 
 
 <p align="right"><a href="#readme-top">Back to Top</a></p>
@@ -316,7 +316,7 @@ Web Protocol implementation for Wechat is provided by [wechaty-puppet-wechat](ht
 
 ## Contributing
 
-Any bug fix, new feature and so on are greatly appreciated!
+Any bug fix, new feature, etc are greatly appreciated!
 
 1. Fork the Project
 2. Create your Branch (`git checkout -b feature/someFeature`)

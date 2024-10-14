@@ -17,10 +17,10 @@ async function main() {
 
   const { default: WechatySerivce } = await import("@services/wechatyService");
   const wechatyService = new WechatySerivce({
-    name: "im-assistant",
-    puppet: "wechaty-puppet-wechat",
+    name: "wechaty-wechat", // Name of the json file that stores login credentials
+    puppet: "wechaty-puppet-wechat", // Puppet provider: https://github.com/wechaty/puppet-wechat
     puppetOptions: {
-      uos: true,
+      uos: true, // https://github.com/wechaty/puppet-wechat/issues/127
     },
   });
 

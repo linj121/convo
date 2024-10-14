@@ -4,6 +4,7 @@ import type { WechatyEventListeners } from "wechaty/dist/esm/src/schemas/wechaty
 import QRCode from "qrcode";
 import PluginRegistry from "./plugins/pluginRegistry";
 import registerPlugins from "./plugins/pluginRegistration";
+import Scheduler from "./schedulers";
 
 class WechatyService {
   /**
@@ -21,11 +22,17 @@ class WechatyService {
    */
   public initializedAt: number;
 
+  /**
+   * Each Wechaty Service has its own cron-based task scheduler
+   */
+  private scheduler: Scheduler;
+
 
   constructor(options: WechatyOptions) {
     this.initializedAt = Date.now();
     this.service = WechatyBuilder.build(options);
     registerPlugins();
+    this.scheduler = new Scheduler(this.service);
     this.setupListeners(this.service);
   }
 
@@ -47,6 +54,7 @@ class WechatyService {
       .on("login", this.onLogin)
       .on("logout", this.onLogout)
       .on("message", this.onMessage)
+      .on("ready", this.onReady)
       .on("error", this.onError);
   }
 
@@ -88,10 +96,20 @@ class WechatyService {
 
       logger.info(`on(message) ${message.toString()}`);
 
+      // Each Wechaty Service should dispatch plugins from the same registry
       await PluginRegistry.getInstance().dispatchPlugins(message);
     } catch (error) {
       logger.error(error);      
     }
+  };
+
+  private onReady: WechatyEventListeners["ready"] = async () => {
+    // Wechaty will get into ready state after user login
+    logger.info(`on(ready) Wechaty ready`);
+    // Start scheduled jobs ONLY AFTER when wechaty is ready
+    // NOTE: This might not start immediately
+    logger.info("Starting all scheduled jobs ...");
+    this.scheduler.startAllJobs();
   };
 
   private onError: WechatyEventListeners["error"] = (error) => {

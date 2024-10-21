@@ -1,59 +1,50 @@
 import { z } from "zod";
 import { existsSync } from "node:fs";
  
-// enum ActionTemplate {
-//   CustomMessage = "CustomMessage",
-//   Weather = "Weather",
-//   News = "News",
-// };
-
-// type ActionTemplateInputMap = {
-//   [ActionTemplate.CustomMessage]: string;
-//   [ActionTemplate.Weather]: Array<string>;
-//   [ActionTemplate.News]: string;
-// };
-
-// type Action = {
-//   [K in ActionTemplate]: {
-//     template: K;
-//     input: ActionTemplateInputMap[K];
-//   };
-// }[ActionTemplate];
-
-// type Task = {
-//   name: string, // unique, name of the task
-//   target: string, // name of Contact or Room
-//   cronTime: CronJobParams["cronTime"],
-//   action: Action,
-//   enabled?: boolean // should default to true
-// };
 
 const CustomMessageActionSchema = z.object({
   template: z.literal("CustomMessage"),
   input: z.discriminatedUnion("type", [
     z.object({
       "type": z.literal("text"),
-      "content": z.string().min(1, "Text message cannot be empty.")
+      "content": z.object({
+        text: z.string().min(1, "Text message cannot be empty."),
+      })
     }),
     z.object({
       "type": z.enum(["image", "audio", "video"]),
-      "content": z.string().refine((val) => {
-          return z.string().url().safeParse(val).success || existsSync(val);
-        },
-        { message: "Must be a valid URL or an accessible file path" }
-      )
+      "content": z.object({
+        location: z.string().refine((val) => {
+              return z.string().url().safeParse(val).success || existsSync(val);
+            },
+            { message: "Must be a valid URL or an accessible file path" }
+          ),
+        filename: z.string().optional(),
+      }) 
+
     })
   ]),
 });
 
 const WeatherActionSchema = z.object({
   template: z.literal("Weather"),
-  input: z.array(z.string().min(1, "Location cannot be empty")).min(1, "Location array cannot be empty"),
+  input: z.object({
+    "type": z.literal("default").optional().default("default"),
+    "content": z.array(
+      z.string().min(1, "Location cannot be empty")
+    ).min(1, "Location array cannot be empty"),
+  })
 });
 
 const NewsActionSchema = z.object({
   template: z.literal("News"),
-  input: z.string().optional().default("default"),
+  input: z.object({
+    "type": z.literal("default").optional().default("default"),
+    "content": z.string().optional().default("default"), // news topics
+  }).optional().default({
+    type: "default",
+    content: "default"
+  })
 });
 
 const ActionSchema = z.discriminatedUnion('template', [
@@ -82,10 +73,12 @@ const TaskSchema = z.object({
 });
 
 // https://github.com/colinhacks/zod/issues/2491
-type Task = z.input<typeof TaskSchema>;
+type TaskInput = z.input<typeof TaskSchema>;
+type Task = z.output<typeof TaskSchema>;
 
 
 export {
   TaskSchema,
+  TaskInput,
   Task
 };

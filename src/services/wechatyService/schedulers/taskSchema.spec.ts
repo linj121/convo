@@ -1,4 +1,4 @@
-import { TaskSchema } from "./task";
+import { TaskSchema } from "./taskSchema";
 
 jest.mock("node:fs", () => ({
   existsSync: jest.fn(),
@@ -23,7 +23,9 @@ describe("TaskSchema Validation", () => {
         template: "CustomMessage",
         input: {
           type: "text",
-          content: "This is a text",
+          content: {
+            text: "This is a text"
+          },
         },
       },
     };
@@ -38,12 +40,14 @@ describe("TaskSchema Validation", () => {
         type: "room",
         name: "BS Matters",
       },
-      cronTime: "*/2 * * * * *",
+      cronTime: new Date(),
       action: {
         template: "CustomMessage",
         input: {
           type: "image",
-          content: "/valid/file/path",
+          content: {
+            location: "/valid/file/path"
+          },
         },
       },
     };
@@ -66,7 +70,9 @@ describe("TaskSchema Validation", () => {
         template: "CustomMessage",
         input: {
           type: "image",
-          content: "/invalid/file/path",
+          content: {
+            location: "/invalid/file/path"
+          },
         },
       },
     };
@@ -89,7 +95,9 @@ describe("TaskSchema Validation", () => {
         template: "CustomMessage",
         input: {
           type: "image",
-          content: "invalid-url",
+          content: {
+            location: "invalid-url"
+          },
         },
       },
     };
@@ -111,7 +119,9 @@ describe("TaskSchema Validation", () => {
         template: "CustomMessage",
         input: {
           type: "image",
-          content: "https://example.com/image.jpg",
+          content: { 
+            location: "https://example.com/image.jpg"
+          },
         },
       },
     };
@@ -131,7 +141,9 @@ describe("TaskSchema Validation", () => {
         template: "CustomMessage",
         input: {
           type: "text",
-          content: "Hello",
+          content: {
+            text: "Hello"
+          },
         },
       },
     };
@@ -151,7 +163,9 @@ describe("TaskSchema Validation", () => {
         template: "CustomMessage",
         input: {
           type: "text",
-          content: "Hello",
+          content: {
+            text: "Hello"
+          },
         },
       },
     };
@@ -169,7 +183,9 @@ describe("TaskSchema Validation", () => {
       cronTime: "0 9 * * *",
       action: {
         template: "Weather",
-        input: ["New York", "London"],
+        input: {
+          content: ["New York", "London"]
+        }
       },
     };
 
@@ -186,7 +202,7 @@ describe("TaskSchema Validation", () => {
       cronTime: "0 9 * * *",
       action: {
         template: "Weather",
-        input: [],
+        input: { content: [] },
       },
     };
 
@@ -208,7 +224,10 @@ describe("TaskSchema Validation", () => {
     };
 
     const parsedTask = TaskSchema.parse(task);
-    expect(parsedTask.action.input).toBe("default");
+    expect(parsedTask.action.input).toStrictEqual({
+      type: "default",
+      content: "default"
+    });
   });
 
   test("should fail validation for an unknown action template", () => {

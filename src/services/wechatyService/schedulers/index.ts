@@ -1,10 +1,25 @@
-import { CronJob } from 'cron';
-import type { Wechaty } from 'wechaty';
-
+import { 
+  CronJob,
+  type CronJobParams, 
+} from 'cron';
+import { 
+  type Wechaty, 
+} from 'wechaty';
+import { ContactInterface, RoomInterface } from 'wechaty/impls';
+import { 
+  Job,
+  TaskActionTemplate,
+  TemplateMappings,
+} from '../types';
+import { type Task } from './taskSchema';
+import taskExamples from './taskExamples';
+import templateMappings, {
+  TemplateContextMap
+} from './taskTemplates';
 
 /**
  * Task:
- * primary key: task_name
+ * 0. task name
  * 1. frequency and timezone
  * 2. target (contact / room)
  * 3. action
@@ -28,38 +43,90 @@ import type { Wechaty } from 'wechaty';
 
 
 class Scheduler {
-  private jobs: Array<CronJob> = [];
+  private jobs: Array<Job> = [];
+  private wechatyInstance: Wechaty;
   
-  public constructor(ctx: Wechaty) {
-    this._initJobs(ctx);
+  public constructor(wechatyInstance: Wechaty) {
+    this.wechatyInstance = wechatyInstance;
+    this._initJobs();
   }
 
-  private _initJobs(ctx: Wechaty) {
-    // for (let i = 0; i < 3; i++) {
-    //   this.jobs.push(new CronJob(
-    //       '* * * * * *',
-    //       async function () {
-    //         // const contact = ctx.Contact.find({name: "沙爹王"});
-    //         const room = await ctx.Room.find({ topic: "罗伯特" });
-    //         if (!room) return;
+  private _initJobs() {
 
-    //         const message = `${new Date().toLocaleTimeString()} [Task ${i + 1}] You will see this message every second`;
-    //         room.say(message);
-    //       }, // onTick
-    //       null, // onComplete
-    //       false, // start
-    //       'America/Toronto'
-    //     )
-    //   );
-    // }
+    for (const task of taskExamples) {
+      const template = templateMappings[task.action.template];
+
+      const onTickCallback = this.generateOnTickCb({
+        task,
+        template
+      });
+
+      const newCronjob = new CronJob(
+        task.cronTime,
+        onTickCallback,
+        null, // onComplete
+        false, // start
+        "America/Toronto", // timezone
+        null // context
+      );
+
+      this.jobs.push({
+        cronjob: newCronjob,
+        name: task.name,
+        enabled: task.enabled
+      });
+    }
+  }
+
+  private generateOnTickCb<
+    T extends TaskActionTemplate
+  >(
+    params: {
+      task: Extract<Task, { action: { template: T } }>,
+      template: TemplateMappings[T]
+    }
+  ): CronJobParams["onTick"] {
+    const getTarget = this.getTarget.bind(this);
+    const context = (params.template.context ?? null) as TemplateContextMap[T];
+
+    return async function () {
+      try {
+        const target = await getTarget(params.task.target);
+        const sayable = await params.template.messageProducer.call(context, {
+          action: params.task.action as Extract<Task["action"], { template: T }>, // TypeScript can't infer automatically
+          otherArgs: params.template.otherArgs
+        });
+        await target.say(sayable);
+      } catch (error) {
+        console.error(error); // TODO: replace with logger.error
+      }
+    };
+  }
+
+  private async getTarget(taskTarget: Task["target"]): Promise<RoomInterface | ContactInterface> {
+    let target: RoomInterface | ContactInterface | undefined;
+
+    switch (taskTarget.type) {
+      case "contact":
+        target = await this.wechatyInstance.Contact.find(taskTarget.name);
+        break;
+      case "room":
+        target = await this.wechatyInstance.Room.find(taskTarget.name);
+        break;
+      default:
+        throw new Error("Invalid target type.");
+    }
+
+    if (!target) throw new Error(`Target [${taskTarget.name}] is not found`);
+    return target;
   }
 
   public startAllJobs() {
-    this.jobs.forEach(task => task.start());
+    this.jobs.forEach(job => job.enabled && job.cronjob.start());
   }
 
   public stopAllJobs() {
-    this.jobs.forEach(task => task.stop());
+    this.jobs.forEach(job => job.cronjob.stop());
   }
 
 }

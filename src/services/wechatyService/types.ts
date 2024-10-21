@@ -1,19 +1,14 @@
-type CommandPayload = {
-  messageTime: number,
-  talkerId: string,
-  talkerName: string,
-  talkerAlias: string | undefined,
-  checkinType: CheckinType,
-  url: string | undefined,
-  note: string | undefined
-};
+import type {
+  CronJob,
+} from "cron";
 
-enum CheckinType {
-  Leetcode = "leetcode",
-  Workout = "workout",
-  Reading = "reading",
-  Cooking = "cooking",
-}
+import type { 
+  Sayable 
+} from "wechaty";
+
+import type { Task } from "./schedulers/taskSchema";
+
+import type { TemplateContextMap } from "./schedulers/taskTemplates";
 
 /**
  * Wechaty Puppet Unified Schema for Message
@@ -39,8 +34,37 @@ enum MessageType {
   Post        = 16,   // Moment, Channel, Tweet, etc
 }
 
+type Job = {
+  cronjob: CronJob,
+  name: string,
+  enabled: boolean,
+}
+
+type TaskActionTemplate = Task["action"]["template"];
+
+type OnTickMessageProducer<
+  Ctx, 
+  T extends TaskActionTemplate = TaskActionTemplate
+> = (
+  this: Ctx, 
+  args: {
+    action: Extract<Task["action"], { template: T }>,  
+    otherArgs: any 
+  }
+) => Promise<Sayable> | Sayable;
+
+type TemplateMappings = {
+  [T in TaskActionTemplate]: {
+    messageProducer: OnTickMessageProducer<TemplateContextMap[T], T>;
+    otherArgs: Parameters<OnTickMessageProducer<TemplateContextMap[T], T>>[0]['otherArgs'];
+    context?: TemplateContextMap[T];
+  };
+};
+
 export {
-  CommandPayload,
-  CheckinType,
-  MessageType
+  MessageType,
+  Job,
+  OnTickMessageProducer,
+  TaskActionTemplate,
+  TemplateMappings,
 }

@@ -15,7 +15,10 @@ import { type Task } from './taskSchema';
 import taskExamples from './taskExamples';
 import templateMappings, {
   TemplateContextMap
-} from './taskTemplates';
+} from './templates';
+import type { Config } from '@config';
+import type { Logger } from '@logger';
+
 
 /**
  * Task:
@@ -31,11 +34,11 @@ import templateMappings, {
  * 
  * Management:
  * 1. add / update / delete / read tasks
- *    1.1. Init: Load all tasks from DB into MEM and start them (DB should already be populated with tasks from a config file)
- *    1.2. Add: create a new task in DB and start it
- *    1.3. Update: update the task in DB and restart it
- *    1.4. Delete: stop a task and delete it from DB
- *    1.5. Read: read a task(s) by names or ids from DB
+ *    1.1. Init: Load all tasks from DB into MEM and start them (DB should already be populated with tasks from task examples)
+ *    1.2. Add: create a new task in DB, add to jobs array and start it
+ *    1.3. Update: update the task in DB and jobs array, then restart it
+ *    1.4. Delete: stop a task and delete it from DB and jobs array
+ *    1.5. Read: read a task(s) by its id from DB
  *    1.6. Enable/Disable task(s)
  * 2. start / stop tasks (by id / ALL)
  *    2.1. Read state of task(s) from MEM and start/stop them
@@ -43,11 +46,21 @@ import templateMappings, {
 
 
 class Scheduler {
+  private config: Config;
+  private logger: Logger;
   private jobs: Array<Job> = [];
   private wechatyInstance: Wechaty;
+  public defaultTimeZone: string;
   
-  public constructor(wechatyInstance: Wechaty) {
-    this.wechatyInstance = wechatyInstance;
+  public constructor(args: {
+    wechatyInstance: Wechaty,
+    config: Config,
+    logger: Logger
+  }) {
+    this.config = args.config;
+    this.logger = args.logger;
+    this.wechatyInstance = args.wechatyInstance;
+    this.defaultTimeZone = this.config.TIMEZONE; // user-defined timezone OR OS local timezone
     this._initJobs();
   }
 
@@ -61,12 +74,17 @@ class Scheduler {
         template
       });
 
+      // set to default time zone if time zone is not provided or an empty string
+      // Priority: task.timeZone > user-defined timeZone > OS local time zone
+      //                              ^^^   default time zone   ^^^ 
+      const timeZone = (!task.timeZone) ? this.defaultTimeZone : task.timeZone; 
+
       const newCronjob = new CronJob(
         task.cronTime,
         onTickCallback,
         null, // onComplete
-        false, // start
-        "America/Toronto", // timezone
+        false, // do not start until explicitly set to start 
+        timeZone, // timezone
         null // context
       );
 
@@ -87,6 +105,7 @@ class Scheduler {
     }
   ): CronJobParams["onTick"] {
     const getTarget = this.getTarget.bind(this);
+    const errlogger = this.logger.error.bind(this.logger);
     const context = (params.template.context ?? null) as TemplateContextMap[T];
 
     return async function () {
@@ -98,7 +117,7 @@ class Scheduler {
         });
         await target.say(sayable);
       } catch (error) {
-        console.error(error); // TODO: replace with logger.error
+        errlogger(`Task "${params.task.name}" failed: ${error}`);
       }
     };
   }

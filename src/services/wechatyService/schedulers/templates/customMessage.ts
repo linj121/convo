@@ -1,17 +1,13 @@
-import { FileBox } from "file-box";
-import type { 
-  OnTickMessageProducer, 
-  TemplateMappings
-} from "../types";
-
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
+import { FileBox } from "file-box";
+import type { OnTickMessageProducer } from "@services/wechatyService/types";
 
 function isValidUrl(str: string): boolean {
   let isUrl = false;
   try {
     const parsedUrl = new URL(str);
-    isUrl = parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    isUrl = parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
   } catch (err) {
     isUrl = false;
   }
@@ -73,43 +69,4 @@ const customMessageProducer: OnTickMessageProducer<null, "CustomMessage"> = asyn
   }
 };
 
-const newsProducer: OnTickMessageProducer<null, "News"> = async function (args) {
-  // TODO:
-  
-  return "";
-};
-
-const weatherProducer: OnTickMessageProducer<null, "Weather"> = async function (args) {
-  // TODO:
-
-  return "";
-};
-
-type TemplateContextMap = {
-  CustomMessage: null;
-  Weather: null;
-  News: null;
-}
-
-const templateMappings: TemplateMappings = {
-  CustomMessage: {
-    messageProducer: customMessageProducer,
-    otherArgs: null,
-    context: null
-  },
-  News: {
-    messageProducer: newsProducer,
-    otherArgs: null,
-    context: null
-  },
-  Weather: { 
-    messageProducer: weatherProducer,
-    otherArgs: null,
-    context: null
-  },
-};
-
-export default templateMappings;
-export {
-  TemplateContextMap,
-};
+export default customMessageProducer;

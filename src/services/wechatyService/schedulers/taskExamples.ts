@@ -76,7 +76,7 @@ const taskInputExamples: TaskInput[] = [
         }
       },
     },
-    enabled: false,
+    enabled: true,
   },
   {
     name: "news test",
@@ -87,14 +87,17 @@ const taskInputExamples: TaskInput[] = [
     cronTime: "*/30 * * * * *",
     action: {
       template: "News",
+      input: {
+        content: "Donald Trump"
+      }
     },
-    enabled: false,
+    enabled: true,
   },
   {
     name: "weather test",
     target: {
-      type: "contact",
-      name: "沙爹王",
+      type: "room",
+      name: "罗伯特",
     },
     cronTime: "*/35 * * * * *",
     action: {
@@ -103,7 +106,7 @@ const taskInputExamples: TaskInput[] = [
         content: ["Toronto"]
       }
     },
-    enabled: false,
+    enabled: true,
   }
 ];
 

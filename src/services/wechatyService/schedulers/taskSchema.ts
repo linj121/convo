@@ -1,6 +1,11 @@
-import { z } from "zod";
 import { existsSync } from "node:fs";
+import { z } from "zod";
+import { isValidTimeZone } from "@utils/functions";
  
+
+const timezoneSchema = z.string().refine((val) => isValidTimeZone(val), {
+  message: "Invalid timezone. Use timezone from the tz database.",
+}).optional();
 
 const CustomMessageActionSchema = z.object({
   template: z.literal("CustomMessage"),
@@ -66,6 +71,7 @@ const TaskSchema = z.object({
       z.string().min(1, "cronTime cannot not be empty."),
       z.date()
     ]),
+  timeZone: timezoneSchema,
   action: 
     ActionSchema,
   enabled: 

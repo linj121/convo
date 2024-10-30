@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import * as dotenv from 'dotenv';
 import path from "node:path";
+import { isValidTimeZone } from '@utils/functions';
 
 /**
  * Empty string need to be converted to `undefined` before being sent to zod,
@@ -55,6 +56,12 @@ const configSchema = z.object({
       z.enum(["silly", "debug", "verbose", "http", "info", "warn", "error"])
        .default(process.env.NODE_ENV === "production" ? "info" : "debug")
     ),
+  TIMEZONE:
+    handleEmptyString(
+      z.string().refine((val) => isValidTimeZone(val), {
+        message: "Invalid timezone. Use timezone from the tz database.",
+      }).default(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    ),
 });
 
 type Config = z.infer<typeof configSchema>;
@@ -77,6 +84,7 @@ function parseConfig(): Config {
     WECHATY_CONTACT_WHITELIST: process.env.WECHATY_CONTACT_WHITELIST,
     DATABASE_URL: process.env.DATABASE_URL,
     LOG_LEVEL: process.env.LOG_LEVEL,
+    TIMEZONE: process.env.TIMEZONE,
   });
 
   if (!parsedConfig.success) {

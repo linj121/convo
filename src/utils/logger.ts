@@ -16,5 +16,9 @@ const options: LoggerOptions = {
 };
 
 const logger = createLogger(options);
+type Logger = typeof logger;
 
 export default logger;
+export {
+  Logger
+};

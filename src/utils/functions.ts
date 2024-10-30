@@ -59,8 +59,19 @@ function commandLineParser(command: string): ArgV {
   return argV;
 }
 
+const _validTimeZones = new Set(Intl.supportedValuesOf("timeZone"));
+/**
+ * Check if a string is a valid/supported time zone according to the Intl object in JavaScript
+ * @param tz time zone, eg. "America/NewYork"
+ * @returns True if valid, false otherwise
+ */
+function isValidTimeZone(tz: string): boolean {
+  return _validTimeZones.has(tz);
+}
+
 export {
   sleep,
   deletePartofString,
   commandLineParser,
+  isValidTimeZone,
 };

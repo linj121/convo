@@ -8,7 +8,7 @@ import type {
 
 import type { Task } from "./schedulers/taskSchema";
 
-import type { TemplateContextMap } from "./schedulers/taskTemplates";
+import type { TemplateContextMap } from "./schedulers/templates";
 
 /**
  * Wechaty Puppet Unified Schema for Message

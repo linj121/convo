@@ -1,7 +1,7 @@
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
 
-[![MIT License][license-shield]][license-url]
+<!-- [![MIT License][license-shield]][license-url] -->
 <!-- [![LinkedIn][linkedin-shield]](linkedin-url) -->
 
 <!-- PROJECT LOGO -->
@@ -14,7 +14,7 @@
   <h1 align="center">Convo</h1>
 
   <p align="center">
-    An extension to instant messaging apps
+    <i>Bring automation to your instant messaging app</i>
     <!-- <br />
     <a href="https://github.com/linj121/convo"><strong>Explore the docs »</strong></a>
     <br /> -->
@@ -27,6 +27,7 @@
   </p>
   <p align="center">
     <a href="https://github.com/linj121/convo/actions/workflows/ci.yml/badge.svg"><img src="https://github.com/linj121/convo/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/linj121/convo/blob/main/LICENSE.txt"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
   </p>
 </div>
 
@@ -181,9 +182,9 @@ For **end-users**, [deploy using prebuilt image](#deploy-a-prebuilt-image) is hi
    ```
    **Optional**: Set `NODE_ENV=production` to get a production deployment. eg. `NODE_ENV=production pnpm start`
 
-   > [!NOTE] 
-   > If you see any error related to "Chrome" or "Puppeteer", there might be some missing dependencies(shared objects) required for the chrome binary, which can be verified using the `ldd` command. Try running `make fixdeps` and start again. For now `make fixdeps` only supports Debian based linux distros and Alpine Linux. If your OS isn't supported, consider using **Docker/Dev Container** instead.
-  
+> [!NOTE] 
+> If you see any error related to "Chrome" or "Puppeteer", there might be some missing dependencies(shared objects) required for the chrome binary, which can be verified using the `ldd` command. Try running `make fixdeps` and start again. For now `make fixdeps` only supports Debian based linux distros and Alpine Linux. If your OS isn't supported, consider using **Docker/Dev Container** instead.
+
 
 
 <p align="right"><a href="#readme-top">Back to Top</a></p>
@@ -283,7 +284,7 @@ For **end-users**, [deploy using prebuilt image](#deploy-a-prebuilt-image) is hi
     - [ ] Realtime interface for receiving/sending msgs
     - [ ] Better command line interface (auto complete, hints, validation, etc)
 
-<!-- <p align="right"><a href="#readme-top">Back to Top</a></p> -->
+<p align="right"><a href="#readme-top">Back to Top</a></p>
 
 
 ## How it works
@@ -316,6 +317,8 @@ For **end-users**, [deploy using prebuilt image](#deploy-a-prebuilt-image) is hi
 Web Protocol implementation for Wechat is provided by [wechaty-puppet-wechat](https://github.com/wechaty/puppet-wechat).
 
 \* Architecture [Reference](https://wechaty.js.org/docs/explanations/architecture)
+
+<p align="right"><a href="#readme-top">Back to Top</a></p>
 
 ## Contributing
 

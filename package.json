@@ -13,7 +13,7 @@
     "clean": "tsc --build --clean",
     "serve": "node build/index.js",
     "watch": "tsx watch src/index.ts",
-    "test": "jest --verbose",
+    "test": "tsc --noEmit && jest --verbose",
     "migrate:prod": "prisma migrate deploy",
     "migrate:dev": "prisma migrate dev",
     "generate": "prisma generate"

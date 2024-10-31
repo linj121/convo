@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 on:
   push:
   pull_request: 
@@ -17,5 +17,7 @@ jobs:
         cache: 'pnpm'
     - name: Install dependencies
       run: pnpm install
+    - name: Build app
+      run: pnpm migrate:prod && pnpm generate && pnpm build
     - name: Run unit tests
       run: pnpm test

@@ -25,6 +25,9 @@
     ·
     <a href="https://github.com/linj121/convo/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a> -->
   </p>
+  <p align="center">
+    <a href="https://github.com/github/linj121/convo/actions/workflows/test.yml/badge.svg"><img src="https://github.com/github/linj121/convo/actions/workflows/test.yml/badge.svg"></a>
+  </p>
 </div>
 
 <!-- TABLE OF CONTENTS -->

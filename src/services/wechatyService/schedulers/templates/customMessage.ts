@@ -54,13 +54,13 @@ const customMessageProducer: OnTickMessageProducer<null, "CustomMessage"> = asyn
 
   if (input.type === "text") {
 
-    return input.content.text;
+    return input.text;
 
   } else if (["audio", "image", "video"].includes(input.type)) {
 
-    const resourceBuffer = await fetchResource(input.content.location); // TODO: Cache large files and frequent requests
+    const resourceBuffer = await fetchResource(input.location); // TODO: Cache large files and frequent requests
 
-    const filename = input.content.filename ?? getFilenameFromUrlOrPath(input.content.location); // TODO: get filename during pre-processing
+    const filename = input.filename ?? getFilenameFromUrlOrPath(input.location); // TODO: get filename during pre-processing
 
     return FileBox.fromBuffer(resourceBuffer, filename);
 

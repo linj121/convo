@@ -16,9 +16,7 @@ const taskInputExamples: TaskInput[] = [
       template: "CustomMessage",
       input: {
         type: "text",
-        content: { 
-          text: "This is a test :)"
-        },
+        text: "This is a test :)"
       },
     },
     enabled: false,
@@ -34,10 +32,8 @@ const taskInputExamples: TaskInput[] = [
       template: "CustomMessage",
       input: {
         type: "image",
-        content: {
-          location: "https://dummyimage.com/100x100/ff00ee/000000.png&text=testing",
-          filename: "test.png"
-        }
+        location: "https://dummyimage.com/100x100/ff00ee/000000.png&text=testing",
+        filename: "test.png"
       },
     },
     enabled: false,
@@ -53,9 +49,7 @@ const taskInputExamples: TaskInput[] = [
       template: "CustomMessage",
       input: {
         type: "audio",
-        content: {
-          location: "https://download.samplelib.com/mp3/sample-3s.mp3",
-        }
+        location: "https://download.samplelib.com/mp3/sample-3s.mp3",
       },
     },
     enabled: false,
@@ -71,9 +65,7 @@ const taskInputExamples: TaskInput[] = [
       template: "CustomMessage",
       input: {
         type: "video",
-        content: {
-          location: "https://www.w3schools.com/tags/mov_bbb.mp4",
-        }
+        location: "https://www.w3schools.com/tags/mov_bbb.mp4",
       },
     },
     enabled: true,
@@ -88,7 +80,7 @@ const taskInputExamples: TaskInput[] = [
     action: {
       template: "News",
       input: {
-        content: "Donald Trump"
+        topic: "Donald Trump"
       }
     },
     enabled: true,
@@ -103,7 +95,7 @@ const taskInputExamples: TaskInput[] = [
     action: {
       template: "Weather",
       input: { 
-        content: ["Toronto"]
+        cities: ["Toronto", "New York"]
       }
     },
     enabled: true,
@@ -145,3 +137,7 @@ function validateTasksInput(taskInputs: TaskInput[]): Task[] {
 const taskExamples: Task[] = validateTasksInput(taskInputExamples);
 
 export default taskExamples;
+export {
+  taskInputExamples,
+  validateTasksInput,
+};

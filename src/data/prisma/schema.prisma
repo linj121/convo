@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native"]
 }
 
@@ -8,6 +8,9 @@ datasource db {
   url      = "file:../../../localdb/default.db"
 }
 
+//---------------------------
+// OpenAI Clients
+//---------------------------
 model Assistant {
   id           Int      @id @default(autoincrement())
   name         String   @unique
@@ -22,4 +25,58 @@ model Thread {
   thread_id  String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+}
+
+//---------------------------
+// Task scheduler
+// --------------------------
+// NOTE: Enum & CHECK constraints are not supported in SQLite :(
+// https://github.com/prisma/prisma/issues/2219
+// https://github.com/prisma/prisma/issues/3388
+//---------------------------
+model Task {
+  task_id     String  @id @default(uuid())
+  name        String
+  cron_time   String
+  timezone    String?
+  enabled     Boolean @default(true)
+  target_type String
+  target_name String
+  template    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  customMessage CustomMessageInput?
+  weather       WeatherInput?
+  news          NewsInput?
+}
+
+model CustomMessageInput {
+  task_id  String  @id
+  type     String
+  text     String?
+  location String?
+  filename String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Task Task @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+}
+
+model WeatherInput {
+  task_id String @id
+  cities  String // Serialized array stored as JSON string
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Task Task @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
+}
+
+model NewsInput {
+  task_id String @id
+  topic   String @default("default")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Task Task @relation(fields: [task_id], references: [task_id], onDelete: Cascade)
 }

@@ -25,9 +25,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "This is a text"
-            },
+            text: "This is a text",
           },
         },
       };
@@ -47,9 +45,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "This is a text"
-            },
+            text: "This is a text",
           },
         },
       };
@@ -70,15 +66,15 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "This is a text"
-            },
+            text: "This is a text",
           },
         },
       };
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
-      expect(result.error?.format().timeZone?._errors[0]).toBe("Invalid timezone. Use timezone from the tz database.");
+      expect(
+        result.error?.format().timeZone?._errors[0]
+      ).toBe("Invalid timezone. Use timezone from the tz database.");
     });
 
     test("should throw an error with invalid timezone (not in tz database)", () => {
@@ -94,15 +90,15 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "This is a text"
-            },
+            text: "This is a text",
           },
         },
       };
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
-      expect(result.error?.format().timeZone?._errors[0]).toBe("Invalid timezone. Use timezone from the tz database.");
+      expect(
+        result.error?.format().timeZone?._errors[0]
+      ).toBe("Invalid timezone. Use timezone from the tz database.");
     });
   });
 
@@ -119,9 +115,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "This is a text"
-            },
+            text: "This is a text",
           },
         },
       };
@@ -144,9 +138,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "image",
-            content: {
-              location: "/valid/file/path"
-            },
+            location: "/valid/file/path",
           },
         },
       };
@@ -170,9 +162,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "image",
-            content: {
-              location: "/invalid/file/path"
-            },
+            location: "/invalid/file/path",
           },
         },
       };
@@ -183,11 +173,10 @@ describe("TaskSchema Validation", () => {
       expect(result.success).toBe(false);
       expect(existsSync).toHaveBeenCalledWith("/invalid/file/path");
 
-      // NOTE: This is a work around, for deeply nested union types, zod does not provide the correct type
       const errorMessage = result.error?.issues.find(
-        (issue) => issue.path.join('.') === "action.input.content.location"
+        (issue) => issue.path.join(".") === "action.input.location"
       )?.message;
-    
+
       expect(errorMessage).toBe("Must be a valid URL or an accessible file path");
     });
 
@@ -203,9 +192,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "image",
-            content: {
-              location: "invalid-url"
-            },
+            location: "invalid-url",
           },
         },
       };
@@ -215,11 +202,10 @@ describe("TaskSchema Validation", () => {
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
 
-      // NOTE: This is a work around, for deeply nested union types, zod does not provide the correct type
       const errorMessage = result.error?.issues.find(
-        (issue) => issue.path.join('.') === "action.input.content.location"
+        (issue) => issue.path.join(".") === "action.input.location"
       )?.message;
-          
+
       expect(errorMessage).toBe("Must be a valid URL or an accessible file path");
     });
 
@@ -235,9 +221,7 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "image",
-            content: { 
-              location: "https://example.com/image.jpg"
-            },
+            location: "https://example.com/image.jpg",
           },
         },
       };
@@ -260,16 +244,16 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "Hello"
-            },
+            text: "Hello",
           },
         },
       };
 
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
-      expect(result.error?.format().name?._errors[0]).toBe("Name of the task cannot be empty.");
+      expect(result.error?.format().name?._errors[0]).toBe(
+        "Name of the task cannot be empty."
+      );
     });
   });
 
@@ -286,16 +270,16 @@ describe("TaskSchema Validation", () => {
           template: "CustomMessage",
           input: {
             type: "text",
-            content: {
-              text: "Hello"
-            },
+            text: "Hello",
           },
         },
       };
 
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
-      expect(result.error?.format().target?.type?._errors[0]).toBe("Invalid enum value. Expected 'contact' | 'room', received 'invalidType'");
+      expect(result.error?.format().target?.type?._errors[0]).toBe(
+        "Invalid enum value. Expected 'contact' | 'room', received 'invalidType'"
+      );
     });
   });
 
@@ -311,8 +295,9 @@ describe("TaskSchema Validation", () => {
         action: {
           template: "Weather",
           input: {
-            content: ["New York", "London"]
-          }
+            type: "default",
+            cities: ["New York", "London"],
+          },
         },
       };
 
@@ -320,7 +305,7 @@ describe("TaskSchema Validation", () => {
       expect(result.success).toBe(true);
     });
 
-    test("should fail validation for Weather action with empty location array", () => {
+    test("should fail validation for Weather action with empty cities array", () => {
       const task = {
         name: "invalid weather task",
         target: {
@@ -330,18 +315,26 @@ describe("TaskSchema Validation", () => {
         cronTime: "0 9 * * *",
         action: {
           template: "Weather",
-          input: { content: [] },
+          input: {
+            type: "default",
+            cities: [],
+          },
         },
       };
 
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
-      expect(result.error?.format().action?.input?.content?._errors[0]).toBe("Location array cannot be empty");
+
+      const errorMessage = result.error?.issues.find(
+        (issue) => issue.path.join(".") === "action.input.cities"
+      )?.message;
+
+      expect(errorMessage).toBe("Cities array cannot be empty");
     });
   });
 
   describe("News Action Validation", () => {
-    test("should validate a News action task with default input", () => {
+    test("should validate a News action task successfully", () => {
       const task = {
         name: "news task",
         target: {
@@ -351,16 +344,15 @@ describe("TaskSchema Validation", () => {
         cronTime: "0 8 * * *",
         action: {
           template: "News",
-          // input is optional and should default to 'default'
+          input: {
+            type: "default",
+            topic: "technology",
+          },
         },
       };
 
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(true);
-      expect(result.data?.action.input).toStrictEqual({
-        type: "default",
-        content: "default"
-      });
     });
   });
 
@@ -381,7 +373,11 @@ describe("TaskSchema Validation", () => {
 
       const result = TaskSchema.safeParse(task);
       expect(result.success).toBe(false);
-      expect(result.error?.format().action?.template?._errors[0]).toBe("Invalid discriminator value. Expected 'CustomMessage' | 'Weather' | 'News'");
+      expect(
+        result.error?.format().action?.template?._errors[0]
+      ).toBe(
+        "Invalid discriminator value. Expected 'CustomMessage' | 'Weather' | 'News'"
+      );
     });
   });
 });

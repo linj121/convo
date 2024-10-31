@@ -11,22 +11,17 @@ const CustomMessageActionSchema = z.object({
   template: z.literal("CustomMessage"),
   input: z.discriminatedUnion("type", [
     z.object({
-      "type": z.literal("text"),
-      "content": z.object({
-        text: z.string().min(1, "Text message cannot be empty."),
-      })
+      type: z.literal("text"),
+      text: z.string().min(1, "Text message cannot be empty."),
     }),
     z.object({
-      "type": z.enum(["image", "audio", "video"]),
-      "content": z.object({
-        location: z.string().refine((val) => {
-              return z.string().url().safeParse(val).success || existsSync(val);
-            },
-            { message: "Must be a valid URL or an accessible file path" }
-          ),
-        filename: z.string().optional(),
-      }) 
-
+      type: z.enum(["image", "audio", "video"]),
+      location: z.string().refine((val) => {
+            return z.string().url().safeParse(val).success || existsSync(val);
+          },
+          { message: "Must be a valid URL or an accessible file path" }
+        ),
+      filename: z.string().optional(),
     })
   ]),
 });
@@ -34,21 +29,21 @@ const CustomMessageActionSchema = z.object({
 const WeatherActionSchema = z.object({
   template: z.literal("Weather"),
   input: z.object({
-    "type": z.literal("default").optional().default("default"),
-    "content": z.array(
-      z.string().min(1, "Location cannot be empty")
-    ).min(1, "Location array cannot be empty"),
+    type: z.literal("default").optional().default("default"),
+    cities: z.array(
+      z.string().min(1, "City name cannot be empty")
+    ).min(1, "Cities array cannot be empty"),
   })
 });
 
 const NewsActionSchema = z.object({
   template: z.literal("News"),
   input: z.object({
-    "type": z.literal("default").optional().default("default"),
-    "content": z.string().optional().default("default"), // news topics
+    type: z.literal("default").optional().default("default"),
+    topic: z.string().optional().default("default"),
   }).optional().default({
     type: "default",
-    content: "default"
+    topic: "default"
   })
 });
 

@@ -2,7 +2,7 @@
   "name": "convo",
   "version": "0.0.3",
   "main": "build/index.js",
-  "packageManager": "pnpm@9.11.0",
+  "packageManager": "pnpm@9.12.3",
   "prisma": {
     "schema": "src/data/prisma/schema.prisma"
   },
@@ -32,12 +32,12 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "@prisma/client": "5.20.0",
+    "@prisma/client": "5.21.1",
     "cron": "^3.1.7",
     "dotenv": "^16.4.5",
     "file-box": "^1.4.15",
     "openai": "^4.53.0",
-    "prisma": "^5.20.0",
+    "prisma": "^5.21.1",
     "qrcode": "^1.5.3",
     "wechaty": "^1.20.2",
     "wechaty-puppet-wechat": "^1.18.4",

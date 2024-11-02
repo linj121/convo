@@ -26,7 +26,7 @@
     <a href="https://github.com/linj121/convo/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a> -->
   </p>
   <p align="center">
-    <a href="https://github.com/linj121/convo/actions/workflows/ci.yml/badge.svg"><img src="https://github.com/linj121/convo/actions/workflows/ci.yml/badge.svg"></a>
+    <a href="https://github.com/linj121/convo/actions/workflows/ci.yml"><img src="https://github.com/linj121/convo/actions/workflows/ci.yml/badge.svg"></a>
     <a href="https://github.com/linj121/convo/blob/main/LICENSE.txt"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
   </p>
 </div>

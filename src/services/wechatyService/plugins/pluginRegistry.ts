@@ -5,7 +5,7 @@ import {
   respond,
 } from "@utils/wechatyUtils";
 import { InvalidCommandLineArgument, UnauthorizedError } from "@utils/errors";
-import { commandLineParser } from "@utils/functions";
+import { commandLineParser, errorMessageBuilder } from "@utils/functions";
 import { MessageInterface } from "wechaty/impls";
 import { MessageType } from "../types";
 import PluginBase from "./pluginBase";
@@ -288,7 +288,10 @@ class PluginRegistry {
           logger.info(error);
         } else {
           // unexepected errors
-          logger.error(error);
+          logger.error(errorMessageBuilder({
+            error,
+            customMessage: "[Plugin Manager]"
+          }));
           await respond(message, "Something went wrong with the plugin manager. Please try again later.");
         }
       } finally {

@@ -18,6 +18,7 @@ import templateMappings, {
 } from './templates';
 import type { Config } from '@config';
 import type { Logger } from '@logger';
+import { errorMessageBuilder } from '@utils/functions';
 
 
 /**
@@ -117,7 +118,11 @@ class Scheduler {
         });
         await target.say(sayable);
       } catch (error) {
-        errlogger(`Task "${params.task.name}" failed: ${error}`);
+        const errorMessage = errorMessageBuilder({
+          error,
+          customMessage: `[Scheduler] Task "${params.task.name}" failed:`
+        });
+        errlogger(errorMessage);
       }
     };
   }

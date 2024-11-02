@@ -69,9 +69,56 @@ function isValidTimeZone(tz: string): boolean {
   return _validTimeZones.has(tz);
 }
 
+/**
+ * Structure:
+ * ```text
+ * customMessage\n
+ * error.message\n
+ * error.stack\n (if enabled)
+ * error.cause (if enabled)
+ * ```
+ * @param args `args.printStackTrace` and `args.printCause` default to `true`
+ */
+function errorMessageBuilder(
+  args: {
+    error: unknown, 
+    customMessage: string,
+    printStackTrace?: boolean,
+    printCause?: boolean,
+  }
+): string {
+  args.printStackTrace ??= true;
+  args.printCause ??= true;
+
+  let errorInfo: string[];
+  if (args.error instanceof Error) {
+    const stackTraceInfo: string = 
+      (args.printStackTrace && args.error.stack) 
+      ? args.error.stack
+      : ""
+    ;
+
+    const errorCauseInfo: string =
+      (args.printCause && args.error.cause)
+      ? String(args.error.cause)
+      : ""
+    ;
+
+    errorInfo = [args.error.message, stackTraceInfo, errorCauseInfo];
+  } else {
+    errorInfo = ["unknown error"];
+  }
+
+  // Do not join empty string or non-string values
+  return [args.customMessage, ...errorInfo]
+          .filter(msg => typeof(msg) === "string" && msg !== "")
+          .join("\n");
+} 
+
 export {
   sleep,
   deletePartofString,
   commandLineParser,
   isValidTimeZone,
+  errorMessageBuilder,
 };

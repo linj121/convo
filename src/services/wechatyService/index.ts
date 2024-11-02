@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import PluginRegistry from "./plugins/pluginRegistry";
 import registerPlugins from "./plugins/pluginRegistration";
 import Scheduler from "./schedulers";
+import { errorMessageBuilder, sleep } from "@utils/functions";
 
 class WechatyService {
   /**
@@ -45,7 +46,9 @@ class WechatyService {
     this.config = args.config;
     this.logger = args.logger;
     this.initializedAt = Date.now();
+
     this.service = WechatyBuilder.build(args.wechatyOptions);
+
     registerPlugins();
     this.scheduler = new Scheduler({ 
       wechatyInstance: this.service,
@@ -106,6 +109,19 @@ class WechatyService {
 
   private onLogout: WechatyEventListeners["logout"] = async (user, reason?) => {
     this.logger.info(`on(logout) user:${user.toString()}, reason:${reason}`);
+
+    await this.cleanup();
+    
+    // Restart the service to avoid corrupted puppeteer context: https://github.com/linj121/convo/issues/25
+    await this.service.stop();
+    // Wait for a full shutdown
+    await sleep(1000 * 60 * 2);
+    await this.service.start();
+
+    // Fuck it! Let's create a new service. (Follow up: This does not work)
+    // await this.service.stop();
+    // this.service = WechatyBuilder.build(this.wechatyOptions);
+    // await this.service.start();
   };
 
   private onMessage: WechatyEventListeners["message"] = async (message) => {
@@ -118,7 +134,11 @@ class WechatyService {
       // Each Wechaty Service should dispatch plugins from the same registry
       await PluginRegistry.getInstance().dispatchPlugins(message);
     } catch (error) {
-      this.logger.error(error);      
+      const errorMessage = errorMessageBuilder({
+        error,
+        customMessage: "[PluginRegistry] An error occured:"
+      });
+      this.logger.error(errorMessage);
     }
   };
 
@@ -135,6 +155,10 @@ class WechatyService {
     this.logger.error(`on(error) ${error.details}`);
     this.lastError = error;
   };
+
+  private async cleanup(): Promise<void> {
+    this.scheduler.stopAllJobs();
+  }
 }
 
 export default WechatyService;
